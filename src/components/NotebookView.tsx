@@ -26,6 +26,8 @@ import {
   Dices,
   Grid3x3,
   AlignJustify,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
@@ -55,6 +57,7 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
 
   const [pagesOpen, setPagesOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(true);
 
   if (!notebook) return null;
   const activePage = notebook.pages.find((p) => p.id === activePageId) ?? notebook.pages[0];
@@ -255,29 +258,56 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
             )}
           </main>
 
-          <aside className="w-44 shrink-0 border-l border-border bg-card/40 backdrop-blur-sm overflow-y-auto">
-            <div className="flex flex-col gap-2 p-2">
-              {notebook.pages.map((p, idx) => {
-                const active = p.id === activePage?.id;
-                const Icon = pageIcon(p.kind);
-                const label =
-                  p.kind === "character" ? p.sheet?.name || "Character" : p.title;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => setActivePage(p.id)}
-                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-display text-left transition-colors border ${
-                      active
-                        ? "bg-accent text-accent-foreground border-accent"
-                        : "bg-background/60 border-border hover:bg-accent/40"
-                    }`}
-                    title={label}
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0" />
-                    <span className="flex-1 truncate">{idx + 1}. {label}</span>
-                  </button>
-                );
-              })}
+          <aside
+            className={`relative shrink-0 border-l border-border bg-card/40 backdrop-blur-sm transition-[width] duration-300 ${
+              rightOpen ? "w-44" : "w-10"
+            }`}
+          >
+            <button
+              onClick={() => setRightOpen((v) => !v)}
+              className="absolute -left-3 top-3 z-10 h-6 w-6 rounded-full border border-border bg-background shadow-sm flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors"
+              title={rightOpen ? "Collapse pages" : "Expand pages"}
+              aria-label={rightOpen ? "Collapse pages sidebar" : "Expand pages sidebar"}
+            >
+              {rightOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
+            </button>
+
+            <div className="h-full overflow-y-auto overscroll-contain scroll-smooth">
+              <div className="flex flex-col gap-2 p-2 pt-12">
+                {notebook.pages.map((p, idx) => {
+                  const active = p.id === activePage?.id;
+                  const Icon = pageIcon(p.kind);
+                  const label =
+                    p.kind === "character" ? p.sheet?.name || "Character" : p.title;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={(e) => {
+                        setActivePage(p.id);
+                        (e.currentTarget as HTMLElement).scrollIntoView({
+                          behavior: "smooth",
+                          block: "nearest",
+                        });
+                      }}
+                      className={`flex items-center gap-1.5 rounded-md py-1.5 text-xs font-display text-left transition-colors border ${
+                        rightOpen ? "px-2.5" : "px-1.5 justify-center"
+                      } ${
+                        active
+                          ? "bg-accent text-accent-foreground border-accent"
+                          : "bg-background/60 border-border hover:bg-accent/40"
+                      }`}
+                      title={`${idx + 1}. ${label}`}
+                    >
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      {rightOpen && (
+                        <span className="flex-1 truncate">
+                          {idx + 1}. {label}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </aside>
         </div>
