@@ -2,11 +2,6 @@ import { useState } from "react";
 import { useApp } from "@/lib/store";
 import { PageKind } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -17,7 +12,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
-  Menu,
   ChevronLeft,
   Plus,
   FileText,
@@ -27,6 +21,10 @@ import {
   Grid3x3,
   AlignJustify,
   Pin,
+  PinOff,
+  PanelRightClose,
+  PanelRightOpen,
+  ListOrdered,
 } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
@@ -53,145 +51,100 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
   const addPage = useApp((s) => s.addPage);
   const deletePage = useApp((s) => s.deletePage);
   const updatePage = useApp((s) => s.updatePage);
-  const renameNotebook = useApp((s) => s.renameNotebook);
 
-  const [pagesOpen, setPagesOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(true);
 
   if (!notebook) return null;
   const activePage = notebook.pages.find((p) => p.id === activePageId) ?? notebook.pages[0];
 
-  const addAnd = (k: PageKind) => {
-    addPage(notebook.id, k);
-    setPagesOpen(false);
-  };
-
-  const PageList = () => (
-    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
-      <div className="p-4 border-b border-sidebar-border">
-        <input
-          value={notebook.name}
-          onChange={(e) => renameNotebook(notebook.id, e.target.value)}
-          className="bg-transparent font-decorative text-xl w-full outline-none"
-        />
-        <p className="text-xs text-sidebar-foreground/60 italic mt-1">
-          {notebook.pages.length} page{notebook.pages.length !== 1 ? "s" : ""}
-        </p>
-      </div>
-      <div className="flex-1 overflow-auto p-2 space-y-1">
-        {notebook.pages.map((p, idx) => {
-          const active = p.id === activePage?.id;
-          const Icon = pageIcon(p.kind);
-          return (
-            <div
-              key={p.id}
-              className={`group flex items-center gap-2 rounded-md px-2 py-2 cursor-pointer transition-colors ${
-                active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "hover:bg-sidebar-accent/60"
-              }`}
-              onClick={() => {
-                setActivePage(p.id);
-                setPagesOpen(false);
-              }}
-            >
-              <Icon className="h-4 w-4 shrink-0 text-sidebar-primary" />
-              <span className="flex-1 truncate text-sm font-display">
-                {idx + 1}. {p.kind === "character" ? p.sheet?.name || "Character" : p.title}
-              </span>
-              <button
-                className={`transition-opacity ${p.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updatePage(notebook.id, p.id, { pinned: !p.pinned });
-                }}
-                title={p.pinned ? "Unpin from quick sidebar" : "Pin to quick sidebar"}
-                aria-label={p.pinned ? "Unpin page" : "Pin page"}
-              >
-                {p.pinned ? (
-                  <Pin className="h-3.5 w-3.5 fill-sidebar-primary text-sidebar-primary" />
-                ) : (
-                  <Pin className="h-3.5 w-3.5 text-sidebar-foreground/60 hover:text-sidebar-primary" />
-                )}
-              </button>
-              <button
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (notebook.pages.length === 1) {
-                    toast("A notebook needs at least one page.");
-                    return;
-                  }
-                  deletePage(notebook.id, p.id);
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5 text-sidebar-foreground/60 hover:text-destructive" />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-      <div className="p-3 border-t border-sidebar-border">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="sm"
-              className="w-full justify-start gap-2 bg-gradient-accent text-primary-foreground font-display"
-            >
-              <Plus className="h-4 w-4" /> Add page
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>Choose a template</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => addAnd("character")} className="gap-2 cursor-pointer">
-              <Sparkles className="h-4 w-4 text-accent" /> Character Sheet
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addAnd("blank")} className="gap-2 cursor-pointer">
-              <FileText className="h-4 w-4" /> Blank Page
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addAnd("lined")} className="gap-2 cursor-pointer">
-              <AlignJustify className="h-4 w-4" /> College-Ruled
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addAnd("graph")} className="gap-2 cursor-pointer">
-              <Grid3x3 className="h-4 w-4" /> Graph Paper
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-
   const strokes = activePage?.strokes ?? [];
   const images = activePage?.images ?? [];
+  const pinned = notebook.pages
+    .map((p, idx) => ({ p, idx }))
+    .filter(({ p }) => p.pinned);
+
+  const labelFor = (p: typeof notebook.pages[number]) =>
+    p.kind === "character" ? p.sheet?.name || "Character" : p.title;
 
   return (
     <div className="min-h-screen flex w-full">
-      <aside className="hidden md:flex w-72 shrink-0 border-r border-sidebar-border">
-        <PageList />
-      </aside>
-
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 border-b border-border flex items-center gap-2 px-3 sm:px-4 bg-card/60 backdrop-blur-sm">
-          <Sheet open={pagesOpen} onOpenChange={setPagesOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-72">
-              <PageList />
-            </SheetContent>
-          </Sheet>
-
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 font-display">
             <ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline">Library</span>
           </Button>
 
+          {/* All pages dropdown — replaces left sidebar */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1 font-display">
+                <ListOrdered className="h-4 w-4" />
+                <span className="hidden sm:inline">All pages</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-72 max-h-96 overflow-auto">
+              <DropdownMenuLabel className="flex items-center justify-between">
+                <span>{notebook.name}</span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  {notebook.pages.length} page{notebook.pages.length !== 1 ? "s" : ""}
+                </span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {notebook.pages.map((p, idx) => {
+                const Icon = pageIcon(p.kind);
+                const active = p.id === activePage?.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={`group flex items-center gap-2 px-2 py-1.5 rounded-sm cursor-pointer text-sm ${
+                      active ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+                    }`}
+                    onClick={() => setActivePage(p.id)}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="flex-1 truncate font-display">
+                      {idx + 1}. {labelFor(p)}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updatePage(notebook.id, p.id, { pinned: !p.pinned });
+                      }}
+                      title={p.pinned ? "Unpin from sidebar" : "Pin to sidebar"}
+                      aria-label={p.pinned ? "Unpin page" : "Pin page"}
+                    >
+                      <Pin
+                        className={`h-3.5 w-3.5 ${
+                          p.pinned
+                            ? "fill-primary text-primary"
+                            : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary transition-opacity"
+                        }`}
+                      />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (notebook.pages.length === 1) {
+                          toast("A notebook needs at least one page.");
+                          return;
+                        }
+                        deletePage(notebook.id, p.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete page"
+                      aria-label="Delete page"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </div>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <div className="flex-1 text-center font-display text-sm sm:text-base truncate px-2">
-            {activePage?.kind === "character"
-              ? activePage.sheet?.name || "Character"
-              : activePage?.title}
+            {activePage ? labelFor(activePage) : ""}
           </div>
 
           {activePage && (
@@ -272,6 +225,93 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
             )}
           </main>
 
+          {/* Right sidebar — pinned pages */}
+          <aside
+            className={`relative shrink-0 border-l border-border bg-card/40 backdrop-blur-sm transition-[width] duration-300 ${
+              rightOpen ? "w-44" : "w-10"
+            }`}
+          >
+            <button
+              onClick={() => setRightOpen((v) => !v)}
+              className="absolute -left-3 top-3 z-10 h-6 w-6 rounded-full border border-border bg-background shadow-sm flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors"
+              title={rightOpen ? "Collapse pinned pages" : "Expand pinned pages"}
+              aria-label={rightOpen ? "Collapse pinned pages" : "Expand pinned pages"}
+            >
+              {rightOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
+            </button>
+
+            <div className="h-full overflow-y-auto overscroll-contain scroll-smooth">
+              <div className="flex flex-col gap-2 p-2 pt-12">
+                {rightOpen && (
+                  <p className="px-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                    Pinned pages
+                  </p>
+                )}
+
+                {pinned.length === 0 ? (
+                  rightOpen ? (
+                    <div className="text-[11px] text-muted-foreground italic px-1 leading-snug">
+                      No pinned pages yet. Open <span className="font-medium">All pages</span> in the header and tap the pin icon to feature pages here.
+                    </div>
+                  ) : (
+                    <div className="flex justify-center pt-2">
+                      <PinOff className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    </div>
+                  )
+                ) : (
+                  pinned.map(({ p, idx }) => {
+                    const active = p.id === activePage?.id;
+                    const Icon = pageIcon(p.kind);
+                    const label = labelFor(p);
+                    return (
+                      <div
+                        key={p.id}
+                        className={`group flex items-center gap-1 rounded-md border transition-colors ${
+                          active
+                            ? "bg-accent text-accent-foreground border-accent"
+                            : "bg-background/60 border-border hover:bg-accent/40"
+                        }`}
+                      >
+                        <button
+                          onClick={(e) => {
+                            setActivePage(p.id);
+                            (e.currentTarget.parentElement as HTMLElement)?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "nearest",
+                            });
+                          }}
+                          className={`flex items-center gap-1.5 py-1.5 text-xs font-display text-left flex-1 min-w-0 ${
+                            rightOpen ? "px-2.5" : "px-1.5 justify-center"
+                          }`}
+                          title={`${idx + 1}. ${label}`}
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          {rightOpen && (
+                            <span className="flex-1 truncate">
+                              {idx + 1}. {label}
+                            </span>
+                          )}
+                        </button>
+                        {rightOpen && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updatePage(notebook.id, p.id, { pinned: false });
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity pr-1.5"
+                            title="Unpin"
+                            aria-label="Unpin page"
+                          >
+                            <PinOff className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
