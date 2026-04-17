@@ -292,39 +292,79 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
 
             <div className="h-full overflow-y-auto overscroll-contain scroll-smooth">
               <div className="flex flex-col gap-2 p-2 pt-12">
-                {notebook.pages.map((p, idx) => {
-                  const active = p.id === activePage?.id;
-                  const Icon = pageIcon(p.kind);
-                  const label =
-                    p.kind === "character" ? p.sheet?.name || "Character" : p.title;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={(e) => {
-                        setActivePage(p.id);
-                        (e.currentTarget as HTMLElement).scrollIntoView({
-                          behavior: "smooth",
-                          block: "nearest",
-                        });
-                      }}
-                      className={`flex items-center gap-1.5 rounded-md py-1.5 text-xs font-display text-left transition-colors border ${
-                        rightOpen ? "px-2.5" : "px-1.5 justify-center"
-                      } ${
-                        active
-                          ? "bg-accent text-accent-foreground border-accent"
-                          : "bg-background/60 border-border hover:bg-accent/40"
-                      }`}
-                      title={`${idx + 1}. ${label}`}
-                    >
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      {rightOpen && (
-                        <span className="flex-1 truncate">
-                          {idx + 1}. {label}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {rightOpen && (
+                  <p className="px-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                    Pinned pages
+                  </p>
+                )}
+                {(() => {
+                  const pinned = notebook.pages
+                    .map((p, idx) => ({ p, idx }))
+                    .filter(({ p }) => p.pinned);
+
+                  if (pinned.length === 0) {
+                    return rightOpen ? (
+                      <div className="text-[11px] text-muted-foreground italic px-1 leading-snug">
+                        No pinned pages yet. Open the full pages list and tap the pin icon to feature pages here.
+                      </div>
+                    ) : (
+                      <div className="flex justify-center pt-2">
+                        <PinOff className="h-3.5 w-3.5 text-muted-foreground/60" />
+                      </div>
+                    );
+                  }
+
+                  return pinned.map(({ p, idx }) => {
+                    const active = p.id === activePage?.id;
+                    const Icon = pageIcon(p.kind);
+                    const label =
+                      p.kind === "character" ? p.sheet?.name || "Character" : p.title;
+                    return (
+                      <div
+                        key={p.id}
+                        className={`group flex items-center gap-1 rounded-md border transition-colors ${
+                          active
+                            ? "bg-accent text-accent-foreground border-accent"
+                            : "bg-background/60 border-border hover:bg-accent/40"
+                        }`}
+                      >
+                        <button
+                          onClick={(e) => {
+                            setActivePage(p.id);
+                            (e.currentTarget.parentElement as HTMLElement)?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "nearest",
+                            });
+                          }}
+                          className={`flex items-center gap-1.5 py-1.5 text-xs font-display text-left flex-1 min-w-0 ${
+                            rightOpen ? "px-2.5" : "px-1.5 justify-center"
+                          }`}
+                          title={`${idx + 1}. ${label}`}
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          {rightOpen && (
+                            <span className="flex-1 truncate">
+                              {idx + 1}. {label}
+                            </span>
+                          )}
+                        </button>
+                        {rightOpen && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updatePage(notebook.id, p.id, { pinned: false });
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity pr-1.5"
+                            title="Unpin"
+                            aria-label="Unpin page"
+                          >
+                            <PinOff className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           </aside>
