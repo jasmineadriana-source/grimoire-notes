@@ -219,66 +219,68 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
           </Dialog>
         </header>
 
-        <div className="border-b border-border bg-card/40 backdrop-blur-sm overflow-x-auto">
-          <div className="flex items-center gap-2 px-3 py-2 min-w-max">
-            {notebook.pages.map((p, idx) => {
-              const active = p.id === activePage?.id;
-              const Icon = pageIcon(p.kind);
-              const label =
-                p.kind === "character" ? p.sheet?.name || "Character" : p.title;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setActivePage(p.id)}
-                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-display whitespace-nowrap transition-colors border ${
-                    active
-                      ? "bg-accent text-accent-foreground border-accent"
-                      : "bg-background/60 border-border hover:bg-accent/40"
-                  }`}
-                  title={label}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span className="max-w-[140px] truncate">{idx + 1}. {label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <div className="flex-1 flex min-h-0">
+          <main className="flex-1 overflow-auto p-3 sm:p-6 pb-24">
+            {activePage && (
+              <div className="relative mx-auto max-w-4xl">
+                {activePage.kind === "character" && activePage.sheet && (
+                  <CharacterSheetEditor
+                    notebookId={notebook.id}
+                    pageId={activePage.id}
+                    sheet={activePage.sheet}
+                  />
+                )}
+                {(activePage.kind === "blank" ||
+                  activePage.kind === "lined" ||
+                  activePage.kind === "graph") && (
+                  <PaperPage
+                    notebookId={notebook.id}
+                    pageId={activePage.id}
+                    kind={activePage.kind}
+                    title={activePage.title}
+                    text={activePage.text ?? ""}
+                  />
+                )}
+                <ImagesLayer
+                  notebookId={notebook.id}
+                  pageId={activePage.id}
+                  images={images}
+                />
+                <AnnotationLayer
+                  notebookId={notebook.id}
+                  pageId={activePage.id}
+                  strokes={strokes}
+                />
+              </div>
+            )}
+          </main>
 
-        <main className="flex-1 overflow-auto p-3 sm:p-6 pb-24">
-          {activePage && (
-            <div className="relative mx-auto max-w-4xl">
-              {activePage.kind === "character" && activePage.sheet && (
-                <CharacterSheetEditor
-                  notebookId={notebook.id}
-                  pageId={activePage.id}
-                  sheet={activePage.sheet}
-                />
-              )}
-              {(activePage.kind === "blank" ||
-                activePage.kind === "lined" ||
-                activePage.kind === "graph") && (
-                <PaperPage
-                  notebookId={notebook.id}
-                  pageId={activePage.id}
-                  kind={activePage.kind}
-                  title={activePage.title}
-                  text={activePage.text ?? ""}
-                />
-              )}
-              <ImagesLayer
-                notebookId={notebook.id}
-                pageId={activePage.id}
-                images={images}
-              />
-              <AnnotationLayer
-                notebookId={notebook.id}
-                pageId={activePage.id}
-                strokes={strokes}
-              />
+          <aside className="w-44 shrink-0 border-l border-border bg-card/40 backdrop-blur-sm overflow-y-auto">
+            <div className="flex flex-col gap-2 p-2">
+              {notebook.pages.map((p, idx) => {
+                const active = p.id === activePage?.id;
+                const Icon = pageIcon(p.kind);
+                const label =
+                  p.kind === "character" ? p.sheet?.name || "Character" : p.title;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setActivePage(p.id)}
+                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-display text-left transition-colors border ${
+                      active
+                        ? "bg-accent text-accent-foreground border-accent"
+                        : "bg-background/60 border-border hover:bg-accent/40"
+                    }`}
+                    title={label}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="flex-1 truncate">{idx + 1}. {label}</span>
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </main>
+          </aside>
+        </div>
       </div>
     </div>
   );
