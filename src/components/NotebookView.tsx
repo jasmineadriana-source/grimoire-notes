@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApp } from "@/lib/store";
+import { PageKind } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -8,6 +9,14 @@ import {
 } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   Menu,
   ChevronLeft,
   Plus,
@@ -15,13 +24,25 @@ import {
   Sparkles,
   Trash2,
   Dices,
-  Upload,
+  Grid3x3,
+  AlignJustify,
 } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
 import { CharacterSheetEditor } from "./CharacterSheetEditor";
-import { BlankPage } from "./BlankPage";
+import { PaperPage } from "./PaperPage";
+import { AnnotationLayer } from "./AnnotationLayer";
+import { AddImagesButton, ImagesLayer } from "./ImagesLayer";
 import { toast } from "sonner";
+
+const pageIcon = (k: PageKind) => {
+  switch (k) {
+    case "character": return Sparkles;
+    case "blank": return FileText;
+    case "lined": return AlignJustify;
+    case "graph": return Grid3x3;
+  }
+};
 
 export function NotebookView({ onBack }: { onBack: () => void }) {
   const notebookId = useApp((s) => s.activeNotebookId)!;
@@ -38,6 +59,11 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
   if (!notebook) return null;
   const activePage = notebook.pages.find((p) => p.id === activePageId) ?? notebook.pages[0];
 
+  const addAnd = (k: PageKind) => {
+    addPage(notebook.id, k);
+    setPagesOpen(false);
+  };
+
   const PageList = () => (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
       <div className="p-4 border-b border-sidebar-border">
@@ -53,6 +79,7 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
       <div className="flex-1 overflow-auto p-2 space-y-1">
         {notebook.pages.map((p, idx) => {
           const active = p.id === activePage?.id;
+          const Icon = pageIcon(p.kind);
           return (
             <div
               key={p.id}
@@ -66,11 +93,7 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
                 setPagesOpen(false);
               }}
             >
-              {p.kind === "character" ? (
-                <Sparkles className="h-4 w-4 shrink-0 text-sidebar-primary" />
-              ) : (
-                <FileText className="h-4 w-4 shrink-0 text-sidebar-primary" />
-              )}
+              <Icon className="h-4 w-4 shrink-0 text-sidebar-primary" />
               <span className="flex-1 truncate text-sm font-display">
                 {idx + 1}. {p.kind === "character" ? p.sheet?.name || "Character" : p.title}
               </span>
@@ -91,38 +114,42 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
           );
         })}
       </div>
-      <div className="p-3 border-t border-sidebar-border space-y-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          className="w-full justify-start gap-2 bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80"
-          onClick={() => addPage(notebook.id, "character")}
-        >
-          <Sparkles className="h-4 w-4" /> Add character sheet
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="w-full justify-start gap-2 bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80"
-          onClick={() => addPage(notebook.id, "blank")}
-        >
-          <FileText className="h-4 w-4" /> Add blank page
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="w-full justify-start gap-2 bg-sidebar-accent/40 text-sidebar-foreground/60 hover:bg-sidebar-accent/60"
-          onClick={() => toast("PDF import lands in Phase 2 — once Cloud is enabled.")}
-        >
-          <Upload className="h-4 w-4" /> Import PDF (soon)
-        </Button>
+      <div className="p-3 border-t border-sidebar-border">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              className="w-full justify-start gap-2 bg-gradient-accent text-primary-foreground font-display"
+            >
+              <Plus className="h-4 w-4" /> Add page
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>Choose a template</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => addAnd("character")} className="gap-2 cursor-pointer">
+              <Sparkles className="h-4 w-4 text-accent" /> Character Sheet
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addAnd("blank")} className="gap-2 cursor-pointer">
+              <FileText className="h-4 w-4" /> Blank Page
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addAnd("lined")} className="gap-2 cursor-pointer">
+              <AlignJustify className="h-4 w-4" /> College-Ruled
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addAnd("graph")} className="gap-2 cursor-pointer">
+              <Grid3x3 className="h-4 w-4" /> Graph Paper
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
 
+  const strokes = activePage?.strokes ?? [];
+  const images = activePage?.images ?? [];
+
   return (
     <div className="min-h-screen flex w-full">
-      {/* Desktop / iPad landscape sidebar */}
       <aside className="hidden md:flex w-72 shrink-0 border-r border-sidebar-border">
         <PageList />
       </aside>
@@ -145,12 +172,14 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
           </Button>
 
           <div className="flex-1 text-center font-display text-sm sm:text-base truncate px-2">
-            <span className="text-muted-foreground italic mr-2 hidden sm:inline">Page</span>
             {activePage?.kind === "character"
               ? activePage.sheet?.name || "Character"
               : activePage?.title}
           </div>
 
+          {activePage && (
+            <AddImagesButton notebookId={notebook.id} pageId={activePage.id} images={images} />
+          )}
           <ThemeSwitcher notebookId={notebook.id} />
 
           <Dialog open={diceOpen} onOpenChange={setDiceOpen}>
@@ -165,21 +194,38 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
           </Dialog>
         </header>
 
-        <main className="flex-1 overflow-auto p-3 sm:p-6">
-          {activePage?.kind === "character" && activePage.sheet && (
-            <CharacterSheetEditor
-              notebookId={notebook.id}
-              pageId={activePage.id}
-              sheet={activePage.sheet}
-            />
-          )}
-          {activePage?.kind === "blank" && (
-            <BlankPage
-              notebookId={notebook.id}
-              pageId={activePage.id}
-              title={activePage.title}
-              text={activePage.text ?? ""}
-            />
+        <main className="flex-1 overflow-auto p-3 sm:p-6 pb-24">
+          {activePage && (
+            <div className="relative mx-auto max-w-4xl">
+              {activePage.kind === "character" && activePage.sheet && (
+                <CharacterSheetEditor
+                  notebookId={notebook.id}
+                  pageId={activePage.id}
+                  sheet={activePage.sheet}
+                />
+              )}
+              {(activePage.kind === "blank" ||
+                activePage.kind === "lined" ||
+                activePage.kind === "graph") && (
+                <PaperPage
+                  notebookId={notebook.id}
+                  pageId={activePage.id}
+                  kind={activePage.kind}
+                  title={activePage.title}
+                  text={activePage.text ?? ""}
+                />
+              )}
+              <ImagesLayer
+                notebookId={notebook.id}
+                pageId={activePage.id}
+                images={images}
+              />
+              <AnnotationLayer
+                notebookId={notebook.id}
+                pageId={activePage.id}
+                strokes={strokes}
+              />
+            </div>
           )}
         </main>
       </div>

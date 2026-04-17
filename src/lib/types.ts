@@ -50,7 +50,32 @@ export const blankSheet = (name = "New Adventurer"): CharacterSheet => ({
   notes: "",
 });
 
-export type PageKind = "character" | "blank";
+export type PageKind = "character" | "blank" | "lined" | "graph";
+
+export const PAPER_KINDS: { kind: PageKind; label: string }[] = [
+  { kind: "character", label: "Character Sheet" },
+  { kind: "blank", label: "Blank Page" },
+  { kind: "lined", label: "College-Ruled Paper" },
+  { kind: "graph", label: "Graph Paper" },
+];
+
+export type Tool = "pen" | "pencil" | "highlighter" | "eraser";
+
+export type Stroke = {
+  id: string;
+  tool: Tool;
+  color: string;     // hex
+  size: number;      // px
+  points: { x: number; y: number; p: number }[]; // normalized 0-1 coords + pressure
+};
+
+export type PageImage = {
+  id: string;
+  src: string;       // data URL
+  x: number;         // 0-1
+  y: number;         // 0-1
+  w: number;         // 0-1
+};
 
 export type NotebookPage = {
   id: string;
@@ -58,8 +83,11 @@ export type NotebookPage = {
   title: string;
   // character
   sheet?: CharacterSheet;
-  // blank
+  // blank/lined/graph
   text?: string;
+  // shared annotations
+  strokes?: Stroke[];
+  images?: PageImage[];
 };
 
 export type Notebook = {

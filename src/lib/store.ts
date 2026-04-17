@@ -105,10 +105,16 @@ export const useApp = create<AppState>()(
 
       addPage: (notebookId, kind) => {
         const id = uid();
+        const titleByKind: Record<string, string> = {
+          character: "New Character",
+          blank: "Notes",
+          lined: "College-Ruled",
+          graph: "Graph Paper",
+        };
         const newPage: NotebookPage =
           kind === "character"
-            ? { id, kind, title: "New Character", sheet: blankSheet("New Adventurer") }
-            : { id, kind, title: "Notes", text: "" };
+            ? { id, kind, title: titleByKind[kind], sheet: blankSheet("New Adventurer"), strokes: [], images: [] }
+            : { id, kind, title: titleByKind[kind] ?? "Page", text: "", strokes: [], images: [] };
         set({
           notebooks: get().notebooks.map((n) =>
             n.id === notebookId ? { ...n, pages: [...n.pages, newPage] } : n,
