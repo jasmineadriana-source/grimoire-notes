@@ -57,7 +57,6 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
 
   const [pagesOpen, setPagesOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(true);
 
   if (!notebook) return null;
   const activePage = notebook.pages.find((p) => p.id === activePageId) ?? notebook.pages[0];
