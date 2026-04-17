@@ -26,10 +26,7 @@ import {
   Dices,
   Grid3x3,
   AlignJustify,
-  PanelRightClose,
-  PanelRightOpen,
   Pin,
-  PinOff,
 } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
