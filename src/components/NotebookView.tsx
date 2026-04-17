@@ -55,6 +55,7 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
   const setActivePage = useApp((s) => s.setActivePage);
   const addPage = useApp((s) => s.addPage);
   const deletePage = useApp((s) => s.deletePage);
+  const updatePage = useApp((s) => s.updatePage);
   const renameNotebook = useApp((s) => s.renameNotebook);
 
   const [pagesOpen, setPagesOpen] = useState(false);
