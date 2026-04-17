@@ -1,5 +1,6 @@
 import { CharacterSheet } from "@/lib/types";
 import { useApp } from "@/lib/store";
+import { PdfImportButton } from "./PdfImportButton";
 
 const modOf = (raw: string) => {
   const n = parseInt(raw, 10);
@@ -92,7 +93,10 @@ export function CharacterSheetEditor({
     updatePage(notebookId, pageId, { sheet: { ...sheet, ...patch } });
 
   return (
-    <div className="page-surface rounded-xl p-6 sm:p-8 mx-auto max-w-4xl animate-fade-in">
+    <div className="page-surface rounded-xl p-6 sm:p-8 mx-auto max-w-4xl animate-fade-in relative">
+      <div className="absolute top-3 right-3 z-10">
+        <PdfImportButton notebookId={notebookId} pageId={pageId} current={sheet} />
+      </div>
       <div className="text-center mb-3">
         <input
           value={sheet.name}
