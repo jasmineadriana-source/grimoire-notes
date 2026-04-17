@@ -180,6 +180,31 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
           {activePage && (
             <AddImagesButton notebookId={notebook.id} pageId={activePage.id} images={images} />
           )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Page</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Choose a template</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => addPage(notebook.id, "character")} className="gap-2 cursor-pointer">
+                <Sparkles className="h-4 w-4 text-accent" /> Character Sheet
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addPage(notebook.id, "blank")} className="gap-2 cursor-pointer">
+                <FileText className="h-4 w-4" /> Blank Page
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addPage(notebook.id, "lined")} className="gap-2 cursor-pointer">
+                <AlignJustify className="h-4 w-4" /> College-Ruled
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addPage(notebook.id, "graph")} className="gap-2 cursor-pointer">
+                <Grid3x3 className="h-4 w-4" /> Graph Paper
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <ThemeSwitcher notebookId={notebook.id} />
 
           <Dialog open={diceOpen} onOpenChange={setDiceOpen}>
