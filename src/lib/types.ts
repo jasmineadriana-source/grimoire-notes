@@ -81,6 +81,7 @@ export type NotebookPage = {
   id: string;
   kind: PageKind;
   title: string;
+  pinned?: boolean;
   // character
   sheet?: CharacterSheet;
   // blank/lined/graph
