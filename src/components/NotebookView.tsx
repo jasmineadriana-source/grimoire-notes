@@ -104,6 +104,21 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
                 {idx + 1}. {p.kind === "character" ? p.sheet?.name || "Character" : p.title}
               </span>
               <button
+                className={`transition-opacity ${p.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updatePage(notebook.id, p.id, { pinned: !p.pinned });
+                }}
+                title={p.pinned ? "Unpin from quick sidebar" : "Pin to quick sidebar"}
+                aria-label={p.pinned ? "Unpin page" : "Pin page"}
+              >
+                {p.pinned ? (
+                  <Pin className="h-3.5 w-3.5 fill-sidebar-primary text-sidebar-primary" />
+                ) : (
+                  <Pin className="h-3.5 w-3.5 text-sidebar-foreground/60 hover:text-sidebar-primary" />
+                )}
+              </button>
+              <button
                 className="opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={(e) => {
                   e.stopPropagation();
