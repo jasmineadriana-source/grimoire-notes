@@ -10,112 +10,144 @@ import * as pdfjsLib from "pdfjs-dist";
 // @ts-ignore
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-/** Extract text as line-per-text-item — preserves order of glyph runs which
- * is what D&D Beyond / Wizards official sheets rely on (value line followed
- * by ALL-CAPS label line). */
-async function extractLines(file: File): Promise<string[]> {
+type Item = { text: string; x: number; y: number; w: number; h: number; page: number };
+
+/** Extract every text run with its page-space coordinates.
+ * pdf.js: transform = [a, b, c, d, e, f] where (e, f) = origin (lower-left).
+ * We convert to top-down y so "above" / "below" reasoning is intuitive. */
+async function extractItems(file: File): Promise<Item[]> {
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  const lines: string[] = [];
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
+  const items: Item[] = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const viewport = page.getViewport({ scale: 1 });
     const content = await page.getTextContent();
     for (const it of content.items as any[]) {
-      const s = (it.str ?? "").trim();
-      if (s) lines.push(s);
+      const text = (it.str ?? "").trim();
+      if (!text) continue;
+      const tr = it.transform as number[]; // [a,b,c,d,e,f]
+      const x = tr[4];
+      const yBottom = tr[5];
+      const h = it.height ?? Math.abs(tr[3]) ?? 10;
+      const w = it.width ?? text.length * 5;
+      items.push({ text, x, y: viewport.height - yBottom, w, h, page: p });
     }
   }
-  return lines;
+  return items;
 }
 
-const isLabel = (s: string, label: string) =>
-  s.replace(/[^A-Z& ]/g, "").trim().toUpperCase() === label.toUpperCase();
-
-/** Find the value that immediately PRECEDES a given label line. Walks back
- * over blank/junk lines until it finds plausible content. */
-function valueBefore(
-  lines: string[],
-  labelMatcher: (s: string) => boolean,
-  opts: { numeric?: boolean; maxBack?: number; allow?: RegExp } = {},
-): string {
-  const { numeric = false, maxBack = 6, allow } = opts;
-  for (let i = 0; i < lines.length; i++) {
-    if (!labelMatcher(lines[i])) continue;
-    for (let j = i - 1, steps = 0; j >= 0 && steps < maxBack; j--, steps++) {
-      const v = lines[j].trim();
-      if (!v) continue;
-      if (numeric) {
-        const m = v.match(/^[+-]?\d{1,3}$/);
-        if (m) return v;
-        continue;
-      }
-      if (allow && !allow.test(v)) continue;
-      // skip pure punctuation / single bullet chars
-      if (/^[•·\-—|]+$/.test(v)) continue;
-      return v;
+/** Group adjacent items on the same line (same page, similar y, close x)
+ * into a single Item. */
+function mergeLines(items: Item[]): Item[] {
+  const sorted = [...items].sort(
+    (a, b) => a.page - b.page || a.y - b.y || a.x - b.x,
+  );
+  const merged: Item[] = [];
+  for (const it of sorted) {
+    const last = merged[merged.length - 1];
+    if (
+      last &&
+      last.page === it.page &&
+      Math.abs(last.y - it.y) < 3 &&
+      it.x - (last.x + last.w) < 6
+    ) {
+      last.text += " " + it.text;
+      last.w = it.x + it.w - last.x;
+    } else {
+      merged.push({ ...it });
     }
   }
-  return "";
+  return merged;
 }
 
-/** Find the value that immediately FOLLOWS a given label line. */
-function valueAfter(
-  lines: string[],
-  labelMatcher: (s: string) => boolean,
-  opts: { numeric?: boolean; maxFwd?: number; allow?: RegExp } = {},
-): string {
-  const { numeric = false, maxFwd = 6, allow } = opts;
-  for (let i = 0; i < lines.length; i++) {
-    if (!labelMatcher(lines[i])) continue;
-    for (let j = i + 1, steps = 0; j < lines.length && steps < maxFwd; j++, steps++) {
-      const v = lines[j].trim();
-      if (!v) continue;
-      if (numeric) {
-        const m = v.match(/^[+-]?\d{1,3}$/);
-        if (m) return v;
-        continue;
-      }
-      if (allow && !allow.test(v)) continue;
-      if (/^[•·\-—|]+$/.test(v)) continue;
-      return v;
+/** Find every item whose merged text matches `label` (case-insensitive,
+ * ignoring punctuation/ampersand differences). */
+function findLabels(items: Item[], label: string): Item[] {
+  const norm = (s: string) =>
+    s.replace(/[^A-Za-z& ]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
+  const want = norm(label);
+  return items.filter((it) => norm(it.text) === want);
+}
+
+/** Find the value for a label by looking for the nearest item directly
+ * `above` or `below` the label on the same page, within a column of width
+ * `xTol` and a vertical band of `yMax`. */
+function nearestValue(
+  items: Item[],
+  label: Item,
+  opts: {
+    direction: "above" | "below";
+    xTol?: number;
+    yMax?: number;
+    filter?: (text: string) => boolean;
+  },
+): Item | null {
+  const { direction, xTol = 60, yMax = 35, filter } = opts;
+  const labelCx = label.x + label.w / 2;
+  let best: Item | null = null;
+  let bestDy = Infinity;
+  for (const it of items) {
+    if (it === label || it.page !== label.page) continue;
+    const dy = direction === "above" ? label.y - it.y : it.y - label.y;
+    if (dy <= 0 || dy > yMax) continue;
+    const itCx = it.x + it.w / 2;
+    if (Math.abs(itCx - labelCx) > xTol) continue;
+    if (filter && !filter(it.text)) continue;
+    if (dy < bestDy) {
+      bestDy = dy;
+      best = it;
     }
   }
-  return "";
+  return best;
 }
 
-const eq = (label: string) => (s: string) => isLabel(s, label);
+const isNumeric = (s: string) => /^-?\d{1,3}$/.test(s.trim());
+const isSignedNum = (s: string) => /^[+-]?\d{1,3}$/.test(s.trim());
+const hasLetters = (s: string) => /[A-Za-z]/.test(s) && s.length < 60;
 
-function parseSheet(lines: string[]): Partial<CharacterSheet> {
+function parseSheet(items: Item[]): Partial<CharacterSheet> {
+  const lines = mergeLines(items);
   const out: Partial<CharacterSheet> = {};
-  const flat = lines.join(" ");
 
-  // ---- Header fields (value appears just BEFORE the ALL-CAPS label) ----
-  const name = valueBefore(lines, eq("CHARACTER NAME"), { allow: /[A-Za-z]/ });
+  const above = (labelText: string, filter?: (s: string) => boolean, yMax = 35, xTol = 80) => {
+    for (const lbl of findLabels(lines, labelText)) {
+      const v = nearestValue(lines, lbl, { direction: "above", filter, yMax, xTol });
+      if (v) return v.text.trim();
+    }
+    return "";
+  };
+  const below = (labelText: string, filter?: (s: string) => boolean, yMax = 40, xTol = 80) => {
+    for (const lbl of findLabels(lines, labelText)) {
+      const v = nearestValue(lines, lbl, { direction: "below", filter, yMax, xTol });
+      if (v) return v.text.trim();
+    }
+    return "";
+  };
+
+  // ---- Header (value sits just above the ALL-CAPS label) ----
+  const name = above("CHARACTER NAME", hasLetters);
   if (name) out.name = name;
 
-  const cls = valueBefore(lines, eq("CLASS & LEVEL"), { allow: /[A-Za-z]/ })
-    || valueBefore(lines, (s) => /^CLASS\s*(&|AND)?\s*LEVEL$/i.test(s.trim()), { allow: /[A-Za-z]/ });
+  const cls = above("CLASS & LEVEL", hasLetters) || above("CLASS LEVEL", hasLetters);
   if (cls) out.classLevel = cls;
 
-  const race = valueBefore(lines, eq("SPECIES"), { allow: /[A-Za-z]/ })
-    || valueBefore(lines, eq("RACE"), { allow: /[A-Za-z]/ });
+  const race = above("SPECIES", hasLetters) || above("RACE", hasLetters);
   if (race) out.race = race;
 
-  const bg = valueBefore(lines, eq("BACKGROUND"), { allow: /[A-Za-z]/ });
+  const bg = above("BACKGROUND", hasLetters);
   if (bg) out.background = bg;
 
-  const align = valueBefore(lines, eq("ALIGNMENT"), { allow: /[A-Za-z]/ });
+  const align = above("ALIGNMENT", hasLetters);
   if (align) out.alignment = align;
 
-  const player = valueBefore(lines, eq("PLAYER NAME"), { allow: /[A-Za-z0-9]/ });
+  const player = above("PLAYER NAME", (s) => /[A-Za-z0-9]/.test(s) && s.length < 60);
   if (player) out.playerName = player;
 
-  const xp = valueBefore(lines, (s) => /^EXPERIENCE\s*POINTS?$/i.test(s.trim()), {
-    allow: /[\d(]/,
-  });
+  const xp = above("EXPERIENCE POINTS", (s) => /[\d(]/.test(s)) || above("EXPERIENCE", (s) => /[\d(]/.test(s));
   if (xp) out.experience = xp;
 
-  // ---- Ability scores (number appears between the ability name header and the next block) ----
+  // ---- Ability scores: big number sits BELOW the ability label ----
   const abilities: { key: keyof CharacterSheet; label: string }[] = [
     { key: "str", label: "STRENGTH" },
     { key: "dex", label: "DEXTERITY" },
@@ -125,59 +157,36 @@ function parseSheet(lines: string[]): Partial<CharacterSheet> {
     { key: "cha", label: "CHARISMA" },
   ];
   for (const { key, label } of abilities) {
-    const v = valueAfter(lines, eq(label), { numeric: true, maxFwd: 8 });
+    // Bigger search box because the score sits ~15-50pt below.
+    const v = below(label, isNumeric, 60, 40);
     if (v) (out as any)[key] = v;
   }
 
   // ---- Combat stats ----
-  // AC: D&D Beyond shows the number above "ARMOR" then "CLASS" on next line.
-  const ac =
-    valueBefore(lines, eq("ARMOR CLASS"), { numeric: true }) ||
-    valueBefore(lines, eq("ARMOR"), { numeric: true }) ||
-    (flat.match(/Armou?r\s*Class[^0-9]{0,10}(\d{1,2})/i)?.[1] ?? "");
+  const ac = above("ARMOR CLASS", isNumeric, 40, 60) || above("ARMOR", isNumeric, 40, 60);
   if (ac) out.ac = ac;
 
-  const init = valueBefore(lines, eq("INITIATIVE"), { allow: /^[+-]?\d/ });
+  const init = above("INITIATIVE", isSignedNum, 40, 60);
   if (init) out.initiative = /^[+-]/.test(init) ? init : `+${init}`;
 
-  const speed = valueBefore(lines, eq("SPEED"), { allow: /\d/ });
+  const speed = above("SPEED", (s) => /\d/.test(s), 50, 80);
   if (speed) out.speed = speed;
 
-  // HP — values appear in the order Max / Current / Temp under those headers.
-  const findAfterAll = (label: string) => {
-    const idx = lines.findIndex(eq(label));
-    return idx === -1 ? -1 : idx;
-  };
-  const maxIdx = findAfterAll("MAX HP");
-  const curIdx = findAfterAll("CURRENT HP");
-  const tmpIdx = findAfterAll("TEMP HP");
-  // Values typically appear AFTER all three header labels in a row.
-  const headerEnd = Math.max(maxIdx, curIdx, tmpIdx);
-  if (headerEnd > -1) {
-    const numsAfter: { idx: number; v: string }[] = [];
-    for (let i = headerEnd + 1; i < lines.length && numsAfter.length < 3; i++) {
-      const m = lines[i].match(/^(\d{1,3}|--)$/);
-      if (m) numsAfter.push({ idx: i, v: m[1] });
-    }
-    if (numsAfter[0]) out.hpMax = numsAfter[0].v === "--" ? "" : numsAfter[0].v;
-    if (numsAfter[1]) out.hpCurrent = numsAfter[1].v === "--" ? "" : numsAfter[1].v;
-    if (numsAfter[2]) out.hpTemp = numsAfter[2].v === "--" ? "" : numsAfter[2].v;
-    if (out.hpMax && !out.hpCurrent) out.hpCurrent = out.hpMax;
-  } else {
-    const m = flat.match(/(?:Hit Point Maximum|Max\s*HP)[^0-9]{0,10}(\d{1,3})/i);
-    if (m) {
-      out.hpMax = m[1];
-      out.hpCurrent = m[1];
-    }
-  }
+  // HP — three numbers under three side-by-side headers.
+  const maxHp = below("MAX HP", isNumeric, 50, 50);
+  const curHp = below("CURRENT HP", isNumeric, 50, 50);
+  const tmpHp = below("TEMP HP", (s) => /^(\d{1,3}|--)$/.test(s), 50, 50);
+  if (maxHp) out.hpMax = maxHp;
+  if (curHp && curHp !== "--") out.hpCurrent = curHp;
+  else if (maxHp) out.hpCurrent = maxHp;
+  if (tmpHp && tmpHp !== "--") out.hpTemp = tmpHp;
 
-  const prof = valueAfter(lines, eq("PROFICIENCY BONUS"), { allow: /^[+-]?\d/ })
-    || valueBefore(lines, eq("PROFICIENCY BONUS"), { allow: /^[+-]?\d/ });
+  const prof = above("PROFICIENCY BONUS", isSignedNum, 40, 60)
+    || below("PROFICIENCY BONUS", isSignedNum, 40, 60);
   if (prof) out.proficiencyBonus = /^[+-]/.test(prof) ? prof : `+${prof}`;
 
-  const hd = valueAfter(lines, eq("HIT DICE"), { allow: /^\d+\s*d\d+/i })
-    || valueBefore(lines, eq("HIT DICE"), { allow: /^\d+\s*d\d+/i })
-    || (flat.match(/(\d+\s*d\d+)\s*(?:Total|HIT DICE)/i)?.[1] ?? "");
+  const hd = above("HIT DICE", (s) => /^\d+\s*d\d+/i.test(s), 50, 80)
+    || below("HIT DICE", (s) => /^\d+\s*d\d+/i.test(s), 50, 80);
   if (hd) out.hitDice = hd;
 
   return out;
