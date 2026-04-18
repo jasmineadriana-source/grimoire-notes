@@ -11,7 +11,7 @@ type Props = {
 
 const surfaces: Record<Props["kind"], { bg: string; lineHeight: string }> = {
   blank: {
-    bg: "repeating-linear-gradient(transparent, transparent 35px, hsl(var(--ink) / 0.18) 35px, hsl(var(--ink) / 0.18) 36px)",
+    bg: "none",
     lineHeight: "leading-9",
   },
   lined: {
@@ -39,23 +39,28 @@ export function PaperPage({ notebookId, pageId, kind, title, text }: Props) {
         className="bg-transparent font-decorative text-3xl sm:text-4xl text-ink text-center w-full outline-none mb-2"
       />
       <div className="ornament-divider mb-4" />
-      <textarea
-        value={text}
-        onChange={(e) => updatePage(notebookId, pageId, { text: e.target.value })}
-        placeholder={
-          kind === "graph"
-            ? "Sketch maps, draw battle grids, plot dungeons…"
-            : kind === "lined"
-            ? "Begin your chronicle…"
-            : "The page awaits your quill…"
-        }
-        rows={20}
-        className={`w-full bg-transparent font-script text-base sm:text-lg text-ink outline-none resize-none ${surface.lineHeight}`}
-        style={{
-          backgroundImage: surface.bg,
-          paddingLeft: kind === "lined" ? "60px" : undefined,
-        }}
-      />
+      {kind === "blank" ? (
+        <div
+          className="w-full min-h-[640px]"
+          aria-label="Blank drawable page"
+        />
+      ) : (
+        <textarea
+          value={text}
+          onChange={(e) => updatePage(notebookId, pageId, { text: e.target.value })}
+          placeholder={
+            kind === "graph"
+              ? "Sketch maps, draw battle grids, plot dungeons…"
+              : "Begin your chronicle…"
+          }
+          rows={20}
+          className={`w-full bg-transparent font-script text-base sm:text-lg text-ink outline-none resize-none ${surface.lineHeight}`}
+          style={{
+            backgroundImage: surface.bg,
+            paddingLeft: kind === "lined" ? "60px" : undefined,
+          }}
+        />
+      )}
     </div>
   );
 }
