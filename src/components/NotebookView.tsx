@@ -227,6 +227,13 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
                   pageId={activePage.id}
                   images={images}
                 />
+                <WashiLayer
+                  notebookId={notebook.id}
+                  pageId={activePage.id}
+                  washi={washi}
+                  drawStyleId={washiDrawStyle}
+                  onFinishDrawing={() => setWashiDrawStyle(null)}
+                />
                 <AnnotationLayer
                   notebookId={notebook.id}
                   pageId={activePage.id}
