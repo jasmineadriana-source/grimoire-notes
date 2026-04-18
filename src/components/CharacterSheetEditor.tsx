@@ -81,6 +81,94 @@ function Area({
   );
 }
 
+/** Format a timestamp as a friendly relative + absolute string. */
+function formatRest(ts?: number): string {
+  if (!ts) return "Not yet taken";
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  let rel: string;
+  if (mins < 1) rel = "just now";
+  else if (mins < 60) rel = `${mins}m ago`;
+  else if (hours < 24) rel = `${hours}h ago`;
+  else rel = `${days}d ago`;
+  const d = new Date(ts);
+  const abs = d.toLocaleString(undefined, {
+    month: "short", day: "numeric",
+    hour: "numeric", minute: "2-digit",
+  });
+  return `${rel} · ${abs}`;
+}
+
+function RestTracker({
+  sheet,
+  onChange,
+}: {
+  sheet: CharacterSheet;
+  onChange: (patch: Partial<CharacterSheet>) => void;
+}) {
+  const takeShort = () => {
+    onChange({ lastShortRest: Date.now() });
+    toast.success("Short rest taken — 1 hour of light activity.");
+  };
+  const takeLong = () => {
+    onChange({ lastLongRest: Date.now() });
+    toast.success("Long rest taken — fully restored.");
+  };
+  const reset = () => {
+    if (!confirm("Clear both rest timestamps?")) return;
+    onChange({ lastShortRest: undefined, lastLongRest: undefined });
+  };
+
+  return (
+    <div className="rounded-lg border-2 p-3 sm:p-4 mb-6"
+         style={{ borderColor: "hsl(var(--ink) / 0.25)", background: "hsl(var(--paper) / 0.4)" }}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-display text-[11px] uppercase tracking-widest text-ink/70">
+          Rest Tracker
+        </span>
+        <button
+          onClick={reset}
+          className="text-ink/50 hover:text-ink transition-colors"
+          title="Reset rest timestamps"
+          aria-label="Reset rest timestamps"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <button
+          onClick={takeShort}
+          className="flex items-center gap-3 rounded-md border-2 px-3 py-2 text-left transition-all hover:border-accent hover:bg-accent/10"
+          style={{ borderColor: "hsl(var(--ink) / 0.2)" }}
+        >
+          <Coffee className="h-5 w-5 text-accent shrink-0" />
+          <span className="flex-1 min-w-0">
+            <span className="block font-display text-sm text-ink">Short Rest</span>
+            <span className="block text-[11px] text-ink/60 italic truncate">
+              {formatRest(sheet.lastShortRest)}
+            </span>
+          </span>
+        </button>
+        <button
+          onClick={takeLong}
+          className="flex items-center gap-3 rounded-md border-2 px-3 py-2 text-left transition-all hover:border-accent hover:bg-accent/10"
+          style={{ borderColor: "hsl(var(--ink) / 0.2)" }}
+        >
+          <Bed className="h-5 w-5 text-accent shrink-0" />
+          <span className="flex-1 min-w-0">
+            <span className="block font-display text-sm text-ink">Long Rest</span>
+            <span className="block text-[11px] text-ink/60 italic truncate">
+              {formatRest(sheet.lastLongRest)}
+            </span>
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CharacterSheetEditor({
   notebookId,
   pageId,
