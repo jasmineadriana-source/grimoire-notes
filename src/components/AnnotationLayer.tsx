@@ -42,6 +42,22 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
   const liveStroke = useRef<Stroke | null>(null);
   const sizeRef = useRef({ w: 0, h: 0 });
 
+  // Keep latest values in refs so pointer handlers never use stale closures.
+  // Without this, switching pages mid-session would commit strokes to the wrong page.
+  const strokesRef = useRef(strokes);
+  const notebookIdRef = useRef(notebookId);
+  const pageIdRef = useRef(pageId);
+  useEffect(() => { strokesRef.current = strokes; }, [strokes]);
+  useEffect(() => { notebookIdRef.current = notebookId; }, [notebookId]);
+  useEffect(() => { pageIdRef.current = pageId; }, [pageId]);
+
+  // Cancel any in-progress stroke when the page changes so it can't leak across pages.
+  useEffect(() => {
+    liveStroke.current = null;
+    redraw();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId]);
+
   const [drawing, setDrawing] = useState(false); // tool palette open / canvas active
   const [tool, setTool] = useState<Tool>("pen");
   const [colors, setColors] = useState<Record<Tool, string>>({
