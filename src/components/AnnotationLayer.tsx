@@ -295,8 +295,8 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
           className={cn(
             "h-9 w-9 rounded-md flex items-center justify-center border transition-all",
             !drawing
-              ? "border-accent bg-gradient-accent text-primary-foreground accent-glow"
-              : "border-border bg-card hover:border-accent/60",
+              ? "border-accent bg-gradient-accent text-black accent-glow"
+              : "border-border bg-card text-foreground hover:border-accent/60",
           )}
         >
           <Hand className="h-4 w-4" />
