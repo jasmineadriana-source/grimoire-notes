@@ -61,3 +61,6 @@ export function PaperPage({ notebookId, pageId, kind, title, text }: Props) {
           }}
         />
       )}
+    </div>
+  );
+}
