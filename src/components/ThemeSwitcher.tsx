@@ -20,6 +20,9 @@ const swatchFor: Record<ThemeKey, string> = {
   sand: "hsl(35 35% 82%)",
   slate: "hsl(220 12% 32%)",
   midnight: "hsl(225 25% 10%)",
+  pink: "hsl(340 75% 78%)",
+  purple: "hsl(265 55% 65%)",
+  blue: "hsl(210 75% 60%)",
 };
 
 type Props = { notebookId?: string };
