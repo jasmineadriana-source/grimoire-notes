@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { PageImage } from "@/lib/types";
 import { useApp } from "@/lib/store";
-import { Trash2, ImagePlus } from "lucide-react";
+import { Trash2, ImagePlus, Move } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -114,7 +114,9 @@ export function ImagesLayer({
   const updatePage = useApp((s) => s.updatePage);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [resizeId, setResizeId] = useState<string | null>(null);
   const dragOffset = useRef({ dx: 0, dy: 0 });
+  const resizeStart = useRef({ startX: 0, startW: 0, containerW: 1 });
 
   const update = (id: string, patch: Partial<PageImage>) =>
     updatePage(notebookId, pageId, {
@@ -140,7 +142,30 @@ export function ImagesLayer({
     (e.target as Element).setPointerCapture?.(e.pointerId);
   };
 
+  const startResize = (e: React.PointerEvent, img: PageImage) => {
+    if (drawingActive) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    resizeStart.current = {
+      startX: e.clientX,
+      startW: img.w,
+      containerW: rect.width,
+    };
+    setResizeId(img.id);
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+  };
+
   const onMove = (e: React.PointerEvent) => {
+    if (resizeId) {
+      const { startX, startW, containerW } = resizeStart.current;
+      const deltaW = (e.clientX - startX) / containerW;
+      const next = Math.max(0.1, Math.min(0.95, startW + deltaW));
+      update(resizeId, { w: next });
+      return;
+    }
     if (!dragId) return;
     const el = containerRef.current;
     if (!el) return;
@@ -153,7 +178,10 @@ export function ImagesLayer({
     });
   };
 
-  const onUp = () => setDragId(null);
+  const onUp = () => {
+    setDragId(null);
+    setResizeId(null);
+  };
 
   if (images.length === 0) return null;
 
@@ -175,6 +203,7 @@ export function ImagesLayer({
             top: `${img.y * 100}%`,
             width: `${img.w * 100}%`,
             cursor: dragId === img.id ? "grabbing" : "grab",
+            touchAction: "none",
           }}
           onPointerDown={(e) => startDrag(e, img)}
         >
@@ -182,32 +211,28 @@ export function ImagesLayer({
             src={img.src}
             alt="attachment"
             draggable={false}
-            className="w-full rounded-md shadow-page border border-paper-edge select-none"
+            className="w-full rounded-md shadow-page border border-paper-edge select-none pointer-events-none"
           />
-          <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                remove(img.id);
-              }}
-              className="h-7 w-7 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
-              title="Remove image"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <div className="absolute -bottom-1 -right-1">
-            <input
-              type="range"
-              min={0.1}
-              max={0.95}
-              step={0.01}
-              value={img.w}
-              onChange={(e) => update(img.id, { w: +e.target.value })}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="w-24 opacity-0 group-hover:opacity-100 transition-opacity"
-              title="Resize"
-            />
+          {/* Delete button — top right */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              remove(img.id);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Remove image"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+          {/* Resize handle — bottom-right corner, drag to resize */}
+          <div
+            onPointerDown={(e) => startResize(e, img)}
+            className="absolute -bottom-2 -right-2 h-7 w-7 rounded-full bg-card border border-border shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ cursor: "nwse-resize", touchAction: "none" }}
+            title="Drag to resize"
+          >
+            <Move className="h-3.5 w-3.5 rotate-45" />
           </div>
         </div>
       ))}
