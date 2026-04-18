@@ -55,12 +55,14 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
 
   const [diceOpen, setDiceOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(true);
+  const [washiDrawStyle, setWashiDrawStyle] = useState<string | null>(null);
 
   if (!notebook) return null;
   const activePage = notebook.pages.find((p) => p.id === activePageId) ?? notebook.pages[0];
 
   const strokes = activePage?.strokes ?? [];
   const images = activePage?.images ?? [];
+  const washi = activePage?.washi ?? [];
   const pinned = notebook.pages
     .map((p, idx) => ({ p, idx }))
     .filter(({ p }) => p.pinned);
