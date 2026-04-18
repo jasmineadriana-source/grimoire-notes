@@ -151,7 +151,15 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
           </div>
 
           {activePage && (
-            <AddImagesButton notebookId={notebook.id} pageId={activePage.id} images={images} />
+            <>
+              <AddImagesButton notebookId={notebook.id} pageId={activePage.id} images={images} />
+              <AddWashiButton
+                notebookId={notebook.id}
+                pageId={activePage.id}
+                washi={washi}
+                onStartDrawing={(styleId) => setWashiDrawStyle(styleId)}
+              />
+            </>
           )}
 
           <DropdownMenu>
