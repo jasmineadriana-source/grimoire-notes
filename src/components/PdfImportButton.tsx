@@ -209,8 +209,8 @@ export function PdfImportButton({
     if (!file) return;
     setBusy(true);
     try {
-      const lines = await extractLines(file);
-      const parsed = parseSheet(lines);
+      const items = await extractItems(file);
+      const parsed = parseSheet(items);
       const filledCount = Object.keys(parsed).length;
       if (filledCount === 0) {
         toast.error("Couldn't recognize fields in that PDF. Try another sheet.");
