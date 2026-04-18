@@ -19,6 +19,7 @@ import { Book, Dices, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function Library() {
+  const customThemes = useApp((s) => s.customThemes);
   const notebooks = useApp((s) => s.notebooks);
   const setActiveNotebook = useApp((s) => s.setActiveNotebook);
   const createNotebook = useApp((s) => s.createNotebook);
