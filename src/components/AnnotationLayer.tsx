@@ -237,21 +237,6 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
     updatePage(notebookIdRef.current, pageIdRef.current, { strokes: [] });
   };
 
-  const ToolBtn = ({ t, icon: Icon, label }: { t: Tool; icon: typeof Pen; label: string }) => (
-    <button
-      onClick={() => setTool(t)}
-      title={label}
-      className={cn(
-        "h-9 w-9 rounded-md flex items-center justify-center border transition-all",
-        tool === t
-          ? "border-accent bg-gradient-accent text-primary-foreground accent-glow"
-          : "border-border bg-card hover:border-accent/60",
-      )}
-    >
-      <Icon className="h-4 w-4" />
-    </button>
-  );
-
   const activeColor = colors[tool];
   const activeSize = sizes[tool];
 
