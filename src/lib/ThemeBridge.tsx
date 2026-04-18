@@ -70,8 +70,8 @@ const buildCss = (t: CustomTheme): string => {
   --shadow-page: 0 4px 14px -6px hsl(0 0% 0% / ${dark ? 0.55 : 0.22});
   --shadow-glow: 0 0 0 transparent;
   --texture: none;
-  --app-bg-image: ${appBg};
-  --page-bg-image: ${pageBg};
+  ${appBg ? `--app-bg-image: ${appBg};` : ""}
+  ${pageBg ? `--page-bg-image: ${pageBg};` : ""}
   --sidebar-background: ${card};
   --sidebar-foreground: ${foreground};
   --sidebar-primary: ${primary};
