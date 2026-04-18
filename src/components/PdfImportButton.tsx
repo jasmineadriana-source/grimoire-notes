@@ -10,79 +10,174 @@ import * as pdfjsLib from "pdfjs-dist";
 // @ts-ignore
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-async function extractText(file: File): Promise<string> {
+/** Extract text as line-per-text-item — preserves order of glyph runs which
+ * is what D&D Beyond / Wizards official sheets rely on (value line followed
+ * by ALL-CAPS label line). */
+async function extractLines(file: File): Promise<string[]> {
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  let text = "";
+  const lines: string[] = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    text += content.items.map((it: any) => it.str).join(" ") + "\n";
+    for (const it of content.items as any[]) {
+      const s = (it.str ?? "").trim();
+      if (s) lines.push(s);
+    }
   }
-  return text;
+  return lines;
 }
 
-const grab = (re: RegExp, text: string) => {
-  const m = text.match(re);
-  return m?.[1]?.trim() ?? "";
-};
+const isLabel = (s: string, label: string) =>
+  s.replace(/[^A-Z& ]/g, "").trim().toUpperCase() === label.toUpperCase();
 
-function parseSheet(text: string): Partial<CharacterSheet> {
-  const t = text.replace(/\s+/g, " ");
+/** Find the value that immediately PRECEDES a given label line. Walks back
+ * over blank/junk lines until it finds plausible content. */
+function valueBefore(
+  lines: string[],
+  labelMatcher: (s: string) => boolean,
+  opts: { numeric?: boolean; maxBack?: number; allow?: RegExp } = {},
+): string {
+  const { numeric = false, maxBack = 6, allow } = opts;
+  for (let i = 0; i < lines.length; i++) {
+    if (!labelMatcher(lines[i])) continue;
+    for (let j = i - 1, steps = 0; j >= 0 && steps < maxBack; j--, steps++) {
+      const v = lines[j].trim();
+      if (!v) continue;
+      if (numeric) {
+        const m = v.match(/^[+-]?\d{1,3}$/);
+        if (m) return v;
+        continue;
+      }
+      if (allow && !allow.test(v)) continue;
+      // skip pure punctuation / single bullet chars
+      if (/^[•·\-—|]+$/.test(v)) continue;
+      return v;
+    }
+  }
+  return "";
+}
+
+/** Find the value that immediately FOLLOWS a given label line. */
+function valueAfter(
+  lines: string[],
+  labelMatcher: (s: string) => boolean,
+  opts: { numeric?: boolean; maxFwd?: number; allow?: RegExp } = {},
+): string {
+  const { numeric = false, maxFwd = 6, allow } = opts;
+  for (let i = 0; i < lines.length; i++) {
+    if (!labelMatcher(lines[i])) continue;
+    for (let j = i + 1, steps = 0; j < lines.length && steps < maxFwd; j++, steps++) {
+      const v = lines[j].trim();
+      if (!v) continue;
+      if (numeric) {
+        const m = v.match(/^[+-]?\d{1,3}$/);
+        if (m) return v;
+        continue;
+      }
+      if (allow && !allow.test(v)) continue;
+      if (/^[•·\-—|]+$/.test(v)) continue;
+      return v;
+    }
+  }
+  return "";
+}
+
+const eq = (label: string) => (s: string) => isLabel(s, label);
+
+function parseSheet(lines: string[]): Partial<CharacterSheet> {
   const out: Partial<CharacterSheet> = {};
+  const flat = lines.join(" ");
 
-  const name = grab(/Character\s*Name[:\s]+([A-Z][\w' -]{2,40})/i, t);
+  // ---- Header fields (value appears just BEFORE the ALL-CAPS label) ----
+  const name = valueBefore(lines, eq("CHARACTER NAME"), { allow: /[A-Za-z]/ });
   if (name) out.name = name;
 
-  const cls = grab(/Class\s*&?\s*Level[:\s]+([\w ,/]+?)(?:\s+(?:Background|Race|Player|Alignment|Experience))/i, t)
-    || grab(/(?:Class|Level)[:\s]+([\w ,/]{2,40})/i, t);
+  const cls = valueBefore(lines, eq("CLASS & LEVEL"), { allow: /[A-Za-z]/ })
+    || valueBefore(lines, (s) => /^CLASS\s*(&|AND)?\s*LEVEL$/i.test(s.trim()), { allow: /[A-Za-z]/ });
   if (cls) out.classLevel = cls;
 
-  const race = grab(/Race[:\s]+([\w '-]{2,30})/i, t);
+  const race = valueBefore(lines, eq("SPECIES"), { allow: /[A-Za-z]/ })
+    || valueBefore(lines, eq("RACE"), { allow: /[A-Za-z]/ });
   if (race) out.race = race;
-  const bg = grab(/Background[:\s]+([\w '-]{2,40})/i, t);
+
+  const bg = valueBefore(lines, eq("BACKGROUND"), { allow: /[A-Za-z]/ });
   if (bg) out.background = bg;
-  const align = grab(/Alignment[:\s]+([\w '-]{2,30})/i, t);
+
+  const align = valueBefore(lines, eq("ALIGNMENT"), { allow: /[A-Za-z]/ });
   if (align) out.alignment = align;
-  const player = grab(/Player\s*Name[:\s]+([\w' -]{2,40})/i, t);
+
+  const player = valueBefore(lines, eq("PLAYER NAME"), { allow: /[A-Za-z0-9]/ });
   if (player) out.playerName = player;
-  const xp = grab(/(?:Experience\s*Points?|XP)[:\s]+([\d,]+)/i, t);
+
+  const xp = valueBefore(lines, (s) => /^EXPERIENCE\s*POINTS?$/i.test(s.trim()), {
+    allow: /[\d(]/,
+  });
   if (xp) out.experience = xp;
 
-  // Stats — try labeled forms first
-  const statPairs: [keyof CharacterSheet, RegExp[]][] = [
-    ["str", [/Strength[^0-9]{0,15}(\d{1,2})/i, /\bSTR[^0-9]{0,15}(\d{1,2})/i]],
-    ["dex", [/Dexterity[^0-9]{0,15}(\d{1,2})/i, /\bDEX[^0-9]{0,15}(\d{1,2})/i]],
-    ["con", [/Constitution[^0-9]{0,15}(\d{1,2})/i, /\bCON[^0-9]{0,15}(\d{1,2})/i]],
-    ["int", [/Intelligence[^0-9]{0,15}(\d{1,2})/i, /\bINT[^0-9]{0,15}(\d{1,2})/i]],
-    ["wis", [/Wisdom[^0-9]{0,15}(\d{1,2})/i, /\bWIS[^0-9]{0,15}(\d{1,2})/i]],
-    ["cha", [/Charisma[^0-9]{0,15}(\d{1,2})/i, /\bCHA[^0-9]{0,15}(\d{1,2})/i]],
+  // ---- Ability scores (number appears between the ability name header and the next block) ----
+  const abilities: { key: keyof CharacterSheet; label: string }[] = [
+    { key: "str", label: "STRENGTH" },
+    { key: "dex", label: "DEXTERITY" },
+    { key: "con", label: "CONSTITUTION" },
+    { key: "int", label: "INTELLIGENCE" },
+    { key: "wis", label: "WISDOM" },
+    { key: "cha", label: "CHARISMA" },
   ];
-  for (const [k, regs] of statPairs) {
-    for (const r of regs) {
-      const v = grab(r, t);
-      if (v) {
-        (out as any)[k] = v;
-        break;
-      }
+  for (const { key, label } of abilities) {
+    const v = valueAfter(lines, eq(label), { numeric: true, maxFwd: 8 });
+    if (v) (out as any)[key] = v;
+  }
+
+  // ---- Combat stats ----
+  // AC: D&D Beyond shows the number above "ARMOR" then "CLASS" on next line.
+  const ac =
+    valueBefore(lines, eq("ARMOR CLASS"), { numeric: true }) ||
+    valueBefore(lines, eq("ARMOR"), { numeric: true }) ||
+    (flat.match(/Armou?r\s*Class[^0-9]{0,10}(\d{1,2})/i)?.[1] ?? "");
+  if (ac) out.ac = ac;
+
+  const init = valueBefore(lines, eq("INITIATIVE"), { allow: /^[+-]?\d/ });
+  if (init) out.initiative = /^[+-]/.test(init) ? init : `+${init}`;
+
+  const speed = valueBefore(lines, eq("SPEED"), { allow: /\d/ });
+  if (speed) out.speed = speed;
+
+  // HP — values appear in the order Max / Current / Temp under those headers.
+  const findAfterAll = (label: string) => {
+    const idx = lines.findIndex(eq(label));
+    return idx === -1 ? -1 : idx;
+  };
+  const maxIdx = findAfterAll("MAX HP");
+  const curIdx = findAfterAll("CURRENT HP");
+  const tmpIdx = findAfterAll("TEMP HP");
+  // Values typically appear AFTER all three header labels in a row.
+  const headerEnd = Math.max(maxIdx, curIdx, tmpIdx);
+  if (headerEnd > -1) {
+    const numsAfter: { idx: number; v: string }[] = [];
+    for (let i = headerEnd + 1; i < lines.length && numsAfter.length < 3; i++) {
+      const m = lines[i].match(/^(\d{1,3}|--)$/);
+      if (m) numsAfter.push({ idx: i, v: m[1] });
+    }
+    if (numsAfter[0]) out.hpMax = numsAfter[0].v === "--" ? "" : numsAfter[0].v;
+    if (numsAfter[1]) out.hpCurrent = numsAfter[1].v === "--" ? "" : numsAfter[1].v;
+    if (numsAfter[2]) out.hpTemp = numsAfter[2].v === "--" ? "" : numsAfter[2].v;
+    if (out.hpMax && !out.hpCurrent) out.hpCurrent = out.hpMax;
+  } else {
+    const m = flat.match(/(?:Hit Point Maximum|Max\s*HP)[^0-9]{0,10}(\d{1,3})/i);
+    if (m) {
+      out.hpMax = m[1];
+      out.hpCurrent = m[1];
     }
   }
 
-  const ac = grab(/Armou?r\s*Class[:\s]+(\d{1,2})/i, t) || grab(/\bAC[:\s]+(\d{1,2})/i, t);
-  if (ac) out.ac = ac;
-  const init = grab(/Initiative[:\s]+([+-]?\d{1,2})/i, t);
-  if (init) out.initiative = init.startsWith("+") || init.startsWith("-") ? init : `+${init}`;
-  const speed = grab(/Speed[:\s]+(\d{1,3}\s*(?:ft\.?|feet)?)/i, t);
-  if (speed) out.speed = speed;
-  const hpMax = grab(/(?:Hit Point Maximum|Max\s*HP)[:\s]+(\d{1,3})/i, t)
-    || grab(/Hit\s*Points?[:\s]+(\d{1,3})/i, t);
-  if (hpMax) {
-    out.hpMax = hpMax;
-    if (!out.hpCurrent) out.hpCurrent = hpMax;
-  }
-  const prof = grab(/Proficiency\s*Bonus[:\s]+([+-]?\d{1,2})/i, t);
-  if (prof) out.proficiencyBonus = prof.startsWith("+") || prof.startsWith("-") ? prof : `+${prof}`;
-  const hd = grab(/Hit\s*Dice[:\s]+([\dd /+-]{2,15})/i, t);
+  const prof = valueAfter(lines, eq("PROFICIENCY BONUS"), { allow: /^[+-]?\d/ })
+    || valueBefore(lines, eq("PROFICIENCY BONUS"), { allow: /^[+-]?\d/ });
+  if (prof) out.proficiencyBonus = /^[+-]/.test(prof) ? prof : `+${prof}`;
+
+  const hd = valueAfter(lines, eq("HIT DICE"), { allow: /^\d+\s*d\d+/i })
+    || valueBefore(lines, eq("HIT DICE"), { allow: /^\d+\s*d\d+/i })
+    || (flat.match(/(\d+\s*d\d+)\s*(?:Total|HIT DICE)/i)?.[1] ?? "");
   if (hd) out.hitDice = hd;
 
   return out;
@@ -105,8 +200,8 @@ export function PdfImportButton({
     if (!file) return;
     setBusy(true);
     try {
-      const text = await extractText(file);
-      const parsed = parseSheet(text);
+      const lines = await extractLines(file);
+      const parsed = parseSheet(lines);
       const filledCount = Object.keys(parsed).length;
       if (filledCount === 0) {
         toast.error("Couldn't recognize fields in that PDF. Try another sheet.");
