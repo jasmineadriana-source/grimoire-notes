@@ -95,6 +95,32 @@ export type PageImage = {
   w: number;         // 0-1
 };
 
+/** A washi-tape strip placed on a page. Coordinates are normalized 0-1
+ * relative to the page surface. The strip is rendered as a thin
+ * rotated rectangle (tape look). */
+export type WashiStrip = {
+  id: string;
+  /** Visual style identifier — built-in pattern key (e.g. "stripes-rose")
+   * or "custom:<id>" referring to a saved custom tape. */
+  styleId: string;
+  /** Center point on page (0-1). */
+  cx: number;
+  cy: number;
+  /** Length and thickness as fraction of page width. */
+  length: number;
+  thickness: number;
+  /** Rotation in degrees. */
+  rotation: number;
+};
+
+/** A user-uploaded custom washi tape design. */
+export type CustomWashi = {
+  id: string;
+  name: string;
+  src: string;       // data URL
+  fit: "tile" | "stretch";
+};
+
 export type NotebookPage = {
   id: string;
   kind: PageKind;
@@ -107,6 +133,7 @@ export type NotebookPage = {
   // shared annotations
   strokes?: Stroke[];
   images?: PageImage[];
+  washi?: WashiStrip[];
 };
 
 export type Notebook = {
