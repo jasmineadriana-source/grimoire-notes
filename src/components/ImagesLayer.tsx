@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { PageImage } from "@/lib/types";
 import { useApp } from "@/lib/store";
-import { Trash2, ImagePlus } from "lucide-react";
+import { Trash2, ImagePlus, Move } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
