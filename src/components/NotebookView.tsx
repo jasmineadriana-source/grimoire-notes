@@ -25,6 +25,8 @@ import {
   PanelRightClose,
   PanelRightOpen,
   ListOrdered,
+  Sword,
+  BookOpen,
 } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
@@ -33,6 +35,8 @@ import { PaperPage } from "./PaperPage";
 import { AnnotationLayer } from "./AnnotationLayer";
 import { AddImagesButton, ImagesLayer } from "./ImagesLayer";
 import { AddWashiButton, WashiLayer } from "./WashiLayer";
+import { WeaponsEditor } from "./WeaponsEditor";
+import { SpellbookEditor } from "./SpellbookEditor";
 import { toast } from "sonner";
 
 const pageIcon = (k: PageKind) => {
@@ -41,6 +45,8 @@ const pageIcon = (k: PageKind) => {
     case "blank": return FileText;
     case "lined": return AlignJustify;
     case "graph": return Grid3x3;
+    case "weapons": return Sword;
+    case "spells": return BookOpen;
   }
 };
 
