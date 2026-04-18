@@ -304,10 +304,10 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
 
         <span className="w-px h-6 bg-border" />
 
-        <ToolBtn t="pen" icon={Pen} label="Pen" />
-        <ToolBtn t="pencil" icon={Pencil} label="Pencil" />
-        <ToolBtn t="highlighter" icon={Highlighter} label="Highlighter" />
-        <ToolBtn t="eraser" icon={Eraser} label="Eraser" />
+        <ToolBtn active={tool === "pen"} onClick={() => setTool("pen")} icon={Pen} label="Pen" />
+        <ToolBtn active={tool === "pencil"} onClick={() => setTool("pencil")} icon={Pencil} label="Pencil" />
+        <ToolBtn active={tool === "highlighter"} onClick={() => setTool("highlighter")} icon={Highlighter} label="Highlighter" />
+        <ToolBtn active={tool === "eraser"} onClick={() => setTool("eraser")} icon={Eraser} label="Eraser" />
 
         {tool !== "eraser" && (
           <>
