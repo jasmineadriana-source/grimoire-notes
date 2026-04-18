@@ -47,10 +47,10 @@ const ToolBtn = ({
     title={label}
     aria-label={label}
     className={cn(
-      "h-9 w-9 rounded-md flex items-center justify-center border transition-all shrink-0",
+      "h-9 w-9 rounded-md flex items-center justify-center border transition-all shrink-0 [&_svg]:stroke-[2.25]",
       active
-        ? "border-accent bg-gradient-accent text-primary-foreground accent-glow"
-        : "border-border bg-card hover:border-accent/60",
+        ? "border-accent bg-gradient-accent text-accent-foreground accent-glow"
+        : "border-border bg-card text-foreground hover:border-accent/60",
     )}
   >
     <Icon className="h-4 w-4" />
