@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   blankSheet,
+  CustomTheme,
   CustomWashi,
   Notebook,
   NotebookPage,
