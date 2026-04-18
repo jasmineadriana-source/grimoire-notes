@@ -11,7 +11,7 @@ type Props = {
 
 const surfaces: Record<Props["kind"], { bg: string; lineHeight: string }> = {
   blank: {
-    bg: "repeating-linear-gradient(transparent, transparent 35px, hsl(var(--ink) / 0.18) 35px, hsl(var(--ink) / 0.18) 36px)",
+    bg: "none",
     lineHeight: "leading-9",
   },
   lined: {
