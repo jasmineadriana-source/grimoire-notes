@@ -144,7 +144,7 @@ export function Library() {
               key={nb.id}
               className="group relative h-64 rounded-xl cover-surface overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform"
               onClick={() => setActiveNotebook(nb.id)}
-              style={{ background: swatchFor[nb.theme] }}
+              style={{ background: swatchForTheme(nb.theme, customThemes) }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
