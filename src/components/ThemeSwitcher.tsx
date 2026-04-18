@@ -16,6 +16,10 @@ const swatchFor: Record<ThemeKey, string> = {
   arcane: "linear-gradient(135deg, hsl(245 40% 14%), hsl(270 80% 60%), hsl(195 85% 55%))",
   druid: "linear-gradient(135deg, hsl(100 30% 18%), hsl(110 50% 45%), hsl(35 55% 50%))",
   dragon: "linear-gradient(135deg, hsl(15 20% 12%), hsl(18 95% 55%), hsl(45 95% 55%))",
+  ivory: "hsl(40 30% 96%)",
+  sand: "hsl(35 35% 82%)",
+  slate: "hsl(220 12% 32%)",
+  midnight: "hsl(225 25% 10%)",
 };
 
 type Props = { notebookId?: string };
