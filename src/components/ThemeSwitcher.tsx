@@ -49,23 +49,37 @@ export function ThemeSwitcher({ notebookId }: Props) {
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="font-display">Choose a theme</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {THEMES.map((t) => (
-          <DropdownMenuItem
-            key={t.key}
-            onClick={() => choose(t.key)}
-            className="gap-3 py-2 cursor-pointer"
-          >
-            <span
-              className="h-7 w-7 rounded-md border border-border shrink-0"
-              style={{ background: swatchFor[t.key] }}
-            />
-            <span className="flex-1">
-              <span className="block font-display text-sm">{t.name}</span>
-              <span className="block text-xs text-muted-foreground italic">{t.tagline}</span>
-            </span>
-            {theme === t.key && <Check className="h-4 w-4 text-accent" />}
-          </DropdownMenuItem>
-        ))}
+        {THEMES.map((t, i) => {
+          const prev = THEMES[i - 1];
+          const isFirstSolid =
+            t.name.includes("(Solid)") && (!prev || !prev.name.includes("(Solid)"));
+          return (
+            <div key={t.key}>
+              {isFirstSolid && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="font-display text-xs text-muted-foreground">
+                    Solid colors
+                  </DropdownMenuLabel>
+                </>
+              )}
+              <DropdownMenuItem
+                onClick={() => choose(t.key)}
+                className="gap-3 py-2 cursor-pointer"
+              >
+                <span
+                  className="h-7 w-7 rounded-md border border-border shrink-0"
+                  style={{ background: swatchFor[t.key] }}
+                />
+                <span className="flex-1">
+                  <span className="block font-display text-sm">{t.name}</span>
+                  <span className="block text-xs text-muted-foreground italic">{t.tagline}</span>
+                </span>
+                {theme === t.key && <Check className="h-4 w-4 text-accent" />}
+              </DropdownMenuItem>
+            </div>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
