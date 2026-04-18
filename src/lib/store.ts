@@ -44,6 +44,11 @@ type AppState = {
   customWashi: CustomWashi[];
   addCustomWashi: (c: Omit<CustomWashi, "id">) => string;
   removeCustomWashi: (id: string) => void;
+
+  customThemes: CustomTheme[];
+  addCustomTheme: (t: Omit<CustomTheme, "id">) => string;
+  updateCustomTheme: (id: string, patch: Partial<Omit<CustomTheme, "id">>) => void;
+  deleteCustomTheme: (id: string) => void;
 };
 
 const seedNotebook = (): Notebook => ({
