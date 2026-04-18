@@ -1,6 +1,8 @@
 import { CharacterSheet } from "@/lib/types";
 import { useApp } from "@/lib/store";
 import { PdfImportButton } from "./PdfImportButton";
+import { Bed, Coffee, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 
 const modOf = (raw: string) => {
   const n = parseInt(raw, 10);
