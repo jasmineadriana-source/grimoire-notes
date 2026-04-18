@@ -1,10 +1,22 @@
-export type ThemeKey = "parchment" | "arcane" | "druid" | "dragon";
+export type ThemeKey =
+  | "parchment"
+  | "arcane"
+  | "druid"
+  | "dragon"
+  | "ivory"
+  | "sand"
+  | "slate"
+  | "midnight";
 
 export const THEMES: { key: ThemeKey; name: string; tagline: string }[] = [
   { key: "parchment", name: "Classic Parchment", tagline: "Aged paper & burgundy ink" },
   { key: "arcane", name: "Dark Arcane", tagline: "Obsidian & glowing runes" },
   { key: "druid", name: "Forest Druid", tagline: "Moss, wood & leaf" },
   { key: "dragon", name: "Dragon Fire", tagline: "Black leather & ember" },
+  { key: "ivory", name: "Ivory (Solid)", tagline: "Clean off-white, no texture" },
+  { key: "sand", name: "Sand (Solid)", tagline: "Warm beige, no texture" },
+  { key: "slate", name: "Slate (Solid)", tagline: "Cool gray, no texture" },
+  { key: "midnight", name: "Midnight (Solid)", tagline: "Deep dark, no texture" },
 ];
 
 export type CharacterSheet = {
