@@ -25,6 +25,8 @@ import {
   PanelRightClose,
   PanelRightOpen,
   ListOrdered,
+  Sword,
+  BookOpen,
 } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
@@ -33,6 +35,8 @@ import { PaperPage } from "./PaperPage";
 import { AnnotationLayer } from "./AnnotationLayer";
 import { AddImagesButton, ImagesLayer } from "./ImagesLayer";
 import { AddWashiButton, WashiLayer } from "./WashiLayer";
+import { WeaponsEditor } from "./WeaponsEditor";
+import { SpellbookEditor } from "./SpellbookEditor";
 import { toast } from "sonner";
 
 const pageIcon = (k: PageKind) => {
@@ -41,6 +45,8 @@ const pageIcon = (k: PageKind) => {
     case "blank": return FileText;
     case "lined": return AlignJustify;
     case "graph": return Grid3x3;
+    case "weapons": return Sword;
+    case "spells": return BookOpen;
   }
 };
 
@@ -174,6 +180,13 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
               <DropdownMenuItem onClick={() => addPage(notebook.id, "character")} className="gap-2 cursor-pointer">
                 <Sparkles className="h-4 w-4 text-accent" /> Character Sheet
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addPage(notebook.id, "weapons")} className="gap-2 cursor-pointer">
+                <Sword className="h-4 w-4" /> Weapons
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addPage(notebook.id, "spells")} className="gap-2 cursor-pointer">
+                <BookOpen className="h-4 w-4" /> Spellbook
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => addPage(notebook.id, "blank")} className="gap-2 cursor-pointer">
                 <FileText className="h-4 w-4" /> Blank Page
               </DropdownMenuItem>
@@ -220,6 +233,23 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
                     kind={activePage.kind}
                     title={activePage.title}
                     text={activePage.text ?? ""}
+                  />
+                )}
+                {activePage.kind === "weapons" && (
+                  <WeaponsEditor
+                    notebookId={notebook.id}
+                    pageId={activePage.id}
+                    title={activePage.title}
+                    weapons={activePage.weapons ?? []}
+                  />
+                )}
+                {activePage.kind === "spells" && (
+                  <SpellbookEditor
+                    notebookId={notebook.id}
+                    pageId={activePage.id}
+                    title={activePage.title}
+                    spells={activePage.spells ?? []}
+                    spellbook={activePage.spellbook}
                   />
                 )}
                 <ImagesLayer

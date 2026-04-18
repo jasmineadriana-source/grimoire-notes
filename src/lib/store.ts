@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   blankSheet,
+  blankSpellbookMeta,
   CustomTheme,
   CustomWashi,
   Notebook,
@@ -121,11 +122,19 @@ export const useApp = create<AppState>()(
           blank: "Notes",
           lined: "College-Ruled",
           graph: "Graph Paper",
+          weapons: "Weapons",
+          spells: "Spellbook",
         };
-        const newPage: NotebookPage =
-          kind === "character"
-            ? { id, kind, title: titleByKind[kind], sheet: blankSheet("New Adventurer"), strokes: [], images: [] }
-            : { id, kind, title: titleByKind[kind] ?? "Page", text: "", strokes: [], images: [] };
+        let newPage: NotebookPage;
+        if (kind === "character") {
+          newPage = { id, kind, title: titleByKind[kind], sheet: blankSheet("New Adventurer"), strokes: [], images: [] };
+        } else if (kind === "weapons") {
+          newPage = { id, kind, title: titleByKind[kind], weapons: [], strokes: [], images: [] };
+        } else if (kind === "spells") {
+          newPage = { id, kind, title: titleByKind[kind], spells: [], spellbook: blankSpellbookMeta(), strokes: [], images: [] };
+        } else {
+          newPage = { id, kind, title: titleByKind[kind] ?? "Page", text: "", strokes: [], images: [] };
+        }
         set({
           notebooks: get().notebooks.map((n) =>
             n.id === notebookId ? { ...n, pages: [...n.pages, newPage] } : n,
