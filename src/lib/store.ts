@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   blankSheet,
+  CustomTheme,
   CustomWashi,
   Notebook,
   NotebookPage,
@@ -43,6 +44,11 @@ type AppState = {
   customWashi: CustomWashi[];
   addCustomWashi: (c: Omit<CustomWashi, "id">) => string;
   removeCustomWashi: (id: string) => void;
+
+  customThemes: CustomTheme[];
+  addCustomTheme: (t: Omit<CustomTheme, "id">) => string;
+  updateCustomTheme: (id: string, patch: Partial<Omit<CustomTheme, "id">>) => void;
+  deleteCustomTheme: (id: string) => void;
 };
 
 const seedNotebook = (): Notebook => ({
@@ -165,6 +171,24 @@ export const useApp = create<AppState>()(
       },
       removeCustomWashi: (id) =>
         set({ customWashi: get().customWashi.filter((x) => x.id !== id) }),
+
+      customThemes: [],
+      addCustomTheme: (t) => {
+        const id = `custom-${uid()}`;
+        set({ customThemes: [{ id, ...t }, ...get().customThemes] });
+        return id;
+      },
+      updateCustomTheme: (id, patch) =>
+        set({
+          customThemes: get().customThemes.map((t) =>
+            t.id === id ? { ...t, ...patch, colors: { ...t.colors, ...(patch.colors ?? {}) } } : t,
+          ),
+        }),
+      deleteCustomTheme: (id) => {
+        const remaining = get().customThemes.filter((t) => t.id !== id);
+        const fallback = get().theme === id ? "parchment" : get().theme;
+        set({ customThemes: remaining, theme: fallback });
+      },
     }),
     {
       name: "grimoire-v1",
@@ -174,6 +198,7 @@ export const useApp = create<AppState>()(
         presets: s.presets,
         rollHistory: s.rollHistory,
         customWashi: s.customWashi,
+        customThemes: s.customThemes,
       }),
     },
   ),

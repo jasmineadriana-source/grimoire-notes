@@ -1,4 +1,4 @@
-export type ThemeKey =
+export type BuiltInThemeKey =
   | "parchment"
   | "arcane"
   | "druid"
@@ -11,7 +11,19 @@ export type ThemeKey =
   | "purple"
   | "blue";
 
-export const THEMES: { key: ThemeKey; name: string; tagline: string }[] = [
+/** Theme key — built-in or any custom theme id (e.g. "custom-abc123"). */
+export type ThemeKey = BuiltInThemeKey | string;
+
+export const BUILTIN_THEME_KEYS: BuiltInThemeKey[] = [
+  "parchment", "arcane", "druid", "dragon",
+  "ivory", "sand", "slate", "midnight",
+  "pink", "purple", "blue",
+];
+
+export const isBuiltInTheme = (k: string): k is BuiltInThemeKey =>
+  (BUILTIN_THEME_KEYS as string[]).includes(k);
+
+export const THEMES: { key: BuiltInThemeKey; name: string; tagline: string }[] = [
   { key: "parchment", name: "Classic Parchment", tagline: "Aged paper & burgundy ink" },
   { key: "arcane", name: "Dark Arcane", tagline: "Obsidian & glowing runes" },
   { key: "druid", name: "Forest Druid", tagline: "Moss, wood & leaf" },
@@ -24,6 +36,22 @@ export const THEMES: { key: ThemeKey; name: string; tagline: string }[] = [
   { key: "purple", name: "Purple (Solid)", tagline: "Lavender twilight" },
   { key: "blue", name: "Blue (Solid)", tagline: "Calm sky blue" },
 ];
+
+/** A user-defined theme. Colors are HSL component strings like "210 50% 94%". */
+export type CustomTheme = {
+  id: string;          // "custom-xxxx"
+  name: string;
+  isDark: boolean;
+  colors: {
+    background: string;
+    card: string;
+    primary: string;
+    accent: string;
+    foreground: string;
+  };
+  appBgImage?: string; // data URL — fills app background
+  pageBgImage?: string; // data URL — fills notebook page surface
+};
 
 export type CharacterSheet = {
   name: string;

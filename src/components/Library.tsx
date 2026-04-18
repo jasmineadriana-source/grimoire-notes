@@ -13,26 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ThemeSwitcher } from "./ThemeSwitcher";
+import { ThemeSwitcher, swatchForTheme } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
 import { Book, Dices, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-const swatchFor: Record<ThemeKey, string> = {
-  parchment: "linear-gradient(135deg, hsl(38 55% 80%), hsl(42 75% 50%), hsl(350 55% 32%))",
-  arcane: "linear-gradient(135deg, hsl(245 40% 14%), hsl(270 80% 60%), hsl(195 85% 55%))",
-  druid: "linear-gradient(135deg, hsl(100 30% 18%), hsl(110 50% 45%), hsl(35 55% 50%))",
-  dragon: "linear-gradient(135deg, hsl(15 20% 12%), hsl(18 95% 55%), hsl(45 95% 55%))",
-  ivory: "hsl(40 30% 96%)",
-  sand: "hsl(35 35% 82%)",
-  slate: "hsl(220 12% 32%)",
-  midnight: "hsl(225 25% 10%)",
-  pink: "hsl(340 75% 78%)",
-  purple: "hsl(265 55% 65%)",
-  blue: "hsl(210 75% 60%)",
-};
-
 export function Library() {
+  const customThemes = useApp((s) => s.customThemes);
   const notebooks = useApp((s) => s.notebooks);
   const setActiveNotebook = useApp((s) => s.setActiveNotebook);
   const createNotebook = useApp((s) => s.createNotebook);
@@ -130,7 +117,7 @@ export function Library() {
                       >
                         <span
                           className="h-8 w-8 rounded-md shrink-0"
-                          style={{ background: swatchFor[t.key] }}
+                          style={{ background: swatchForTheme(t.key, customThemes) }}
                         />
                         <span className="min-w-0">
                           <span className="block font-display text-sm truncate">{t.name}</span>
@@ -157,12 +144,12 @@ export function Library() {
               key={nb.id}
               className="group relative h-64 rounded-xl cover-surface overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform"
               onClick={() => setActiveNotebook(nb.id)}
-              style={{ background: swatchFor[nb.theme] }}
+              style={{ background: swatchForTheme(nb.theme, customThemes) }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
                 <span className="text-[10px] uppercase tracking-widest font-display text-white/80 bg-black/30 backdrop-blur-sm rounded px-2 py-0.5">
-                  {THEMES.find((t) => t.key === nb.theme)?.name}
+                  {THEMES.find((t) => t.key === nb.theme)?.name ?? customThemes.find((t) => t.id === nb.theme)?.name ?? "Custom"}
                 </span>
                 <button
                   onClick={(e) => {

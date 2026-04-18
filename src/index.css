@@ -597,7 +597,10 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'IM Fell English', Georgia, serif;
-    background-image: var(--texture);
+    /* Custom themes can set --app-bg-image; built-ins fall back to texture. */
+    background-image: var(--app-bg-image, var(--texture));
+    background-size: cover;
+    background-position: center;
     background-attachment: fixed;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
@@ -620,7 +623,12 @@
 
 @layer components {
   .page-surface {
-    background: var(--gradient-page);
+    /* Custom themes can set --page-bg-image to a url(); built-ins fall back
+       to the themed gradient. */
+    background: var(--page-bg-image, var(--gradient-page));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     box-shadow: var(--shadow-page);
     border: 1px solid hsl(var(--paper-edge) / 0.4);
   }
