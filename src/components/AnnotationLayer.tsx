@@ -42,6 +42,22 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
   const liveStroke = useRef<Stroke | null>(null);
   const sizeRef = useRef({ w: 0, h: 0 });
 
+  // Keep latest values in refs so pointer handlers never use stale closures.
+  // Without this, switching pages mid-session would commit strokes to the wrong page.
+  const strokesRef = useRef(strokes);
+  const notebookIdRef = useRef(notebookId);
+  const pageIdRef = useRef(pageId);
+  useEffect(() => { strokesRef.current = strokes; }, [strokes]);
+  useEffect(() => { notebookIdRef.current = notebookId; }, [notebookId]);
+  useEffect(() => { pageIdRef.current = pageId; }, [pageId]);
+
+  // Cancel any in-progress stroke when the page changes so it can't leak across pages.
+  useEffect(() => {
+    liveStroke.current = null;
+    redraw();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId]);
+
   const [drawing, setDrawing] = useState(false); // tool palette open / canvas active
   const [tool, setTool] = useState<Tool>("pen");
   const [colors, setColors] = useState<Record<Tool, string>>({
@@ -139,12 +155,13 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
 
     if (tool === "eraser") {
       // hit-test: remove any stroke whose any point is within eraser radius
+      const cur = strokesRef.current;
       const radius = sizes.eraser / Math.max(rect.width, rect.height);
-      const remaining = strokes.filter((s) =>
+      const remaining = cur.filter((s) =>
         !s.points.some((p) => Math.hypot(p.x - x, p.y - y) < radius),
       );
-      if (remaining.length !== strokes.length) {
-        updatePage(notebookId, pageId, { strokes: remaining });
+      if (remaining.length !== cur.length) {
+        updatePage(notebookIdRef.current, pageIdRef.current, { strokes: remaining });
       }
       liveStroke.current = null;
       return;
@@ -157,6 +174,8 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
       size: sizes[tool],
       points: [{ x, y, p: pressure }],
     };
+    // Tag the stroke with the page it was started on so we can drop it if the user switches pages mid-stroke.
+    (liveStroke.current as Stroke & { _pageId?: string })._pageId = pageIdRef.current;
     redraw();
   };
 
@@ -170,12 +189,13 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
     const pressure = e.pressure && e.pressure > 0 ? e.pressure : 0.5;
 
     if (tool === "eraser" && (e.buttons & 1)) {
+      const cur = strokesRef.current;
       const radius = sizes.eraser / Math.max(rect.width, rect.height);
-      const remaining = strokes.filter((s) =>
+      const remaining = cur.filter((s) =>
         !s.points.some((p) => Math.hypot(p.x - x, p.y - y) < radius),
       );
-      if (remaining.length !== strokes.length) {
-        updatePage(notebookId, pageId, { strokes: remaining });
+      if (remaining.length !== cur.length) {
+        updatePage(notebookIdRef.current, pageIdRef.current, { strokes: remaining });
       }
       return;
     }
@@ -188,23 +208,33 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
   const pointerUp = () => {
     if (!liveStroke.current) return;
     const finished = liveStroke.current;
+    const startedOn = (finished as Stroke & { _pageId?: string })._pageId;
     liveStroke.current = null;
-    if (finished.points.length > 1) {
-      updatePage(notebookId, pageId, { strokes: [...strokes, finished] });
+    // Only commit the stroke if we're still on the page where it started.
+    if (finished.points.length > 1 && startedOn === pageIdRef.current) {
+      const clean: Stroke = {
+        id: finished.id, tool: finished.tool, color: finished.color,
+        size: finished.size, points: finished.points,
+      };
+      updatePage(notebookIdRef.current, pageIdRef.current, {
+        strokes: [...strokesRef.current, clean],
+      });
     } else {
       redraw();
     }
   };
 
   const undo = () => {
-    if (strokes.length === 0) return;
-    updatePage(notebookId, pageId, { strokes: strokes.slice(0, -1) });
+    const cur = strokesRef.current;
+    if (cur.length === 0) return;
+    updatePage(notebookIdRef.current, pageIdRef.current, { strokes: cur.slice(0, -1) });
   };
 
   const clearAll = () => {
-    if (strokes.length === 0) return;
+    const cur = strokesRef.current;
+    if (cur.length === 0) return;
     if (!confirm("Erase all annotations on this page?")) return;
-    updatePage(notebookId, pageId, { strokes: [] });
+    updatePage(notebookIdRef.current, pageIdRef.current, { strokes: [] });
   };
 
   const ToolBtn = ({ t, icon: Icon, label }: { t: Tool; icon: typeof Pen; label: string }) => (
