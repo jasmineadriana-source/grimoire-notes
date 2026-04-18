@@ -49,7 +49,7 @@ const ToolBtn = ({
     className={cn(
       "h-9 w-9 rounded-md flex items-center justify-center border transition-all shrink-0 [&_svg]:stroke-[2.25]",
       active
-        ? "border-accent bg-gradient-accent text-accent-foreground accent-glow"
+        ? "border-accent bg-gradient-accent text-black accent-glow"
         : "border-border bg-card text-foreground hover:border-accent/60",
     )}
   >
