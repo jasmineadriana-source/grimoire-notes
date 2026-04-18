@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   blankSheet,
+  CustomWashi,
   Notebook,
   NotebookPage,
   PageKind,
@@ -38,6 +39,10 @@ type AppState = {
   clearHistory: () => void;
   addPreset: (p: Omit<RollPreset, "id">) => void;
   removePreset: (id: string) => void;
+
+  customWashi: CustomWashi[];
+  addCustomWashi: (c: Omit<CustomWashi, "id">) => string;
+  removeCustomWashi: (id: string) => void;
 };
 
 const seedNotebook = (): Notebook => ({
@@ -151,6 +156,15 @@ export const useApp = create<AppState>()(
       clearHistory: () => set({ rollHistory: [] }),
       addPreset: (p) => set({ presets: [{ id: uid(), ...p }, ...get().presets] }),
       removePreset: (id) => set({ presets: get().presets.filter((x) => x.id !== id) }),
+
+      customWashi: [],
+      addCustomWashi: (c) => {
+        const id = uid();
+        set({ customWashi: [{ id, ...c }, ...get().customWashi] });
+        return id;
+      },
+      removeCustomWashi: (id) =>
+        set({ customWashi: get().customWashi.filter((x) => x.id !== id) }),
     }),
     {
       name: "grimoire-v1",
@@ -159,6 +173,7 @@ export const useApp = create<AppState>()(
         notebooks: s.notebooks,
         presets: s.presets,
         rollHistory: s.rollHistory,
+        customWashi: s.customWashi,
       }),
     },
   ),

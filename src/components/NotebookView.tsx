@@ -32,6 +32,7 @@ import { CharacterSheetEditor } from "./CharacterSheetEditor";
 import { PaperPage } from "./PaperPage";
 import { AnnotationLayer } from "./AnnotationLayer";
 import { AddImagesButton, ImagesLayer } from "./ImagesLayer";
+import { AddWashiButton, WashiLayer } from "./WashiLayer";
 import { toast } from "sonner";
 
 const pageIcon = (k: PageKind) => {
@@ -54,12 +55,14 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
 
   const [diceOpen, setDiceOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(true);
+  const [washiDrawStyle, setWashiDrawStyle] = useState<string | null>(null);
 
   if (!notebook) return null;
   const activePage = notebook.pages.find((p) => p.id === activePageId) ?? notebook.pages[0];
 
   const strokes = activePage?.strokes ?? [];
   const images = activePage?.images ?? [];
+  const washi = activePage?.washi ?? [];
   const pinned = notebook.pages
     .map((p, idx) => ({ p, idx }))
     .filter(({ p }) => p.pinned);
@@ -148,7 +151,15 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
           </div>
 
           {activePage && (
-            <AddImagesButton notebookId={notebook.id} pageId={activePage.id} images={images} />
+            <>
+              <AddImagesButton notebookId={notebook.id} pageId={activePage.id} images={images} />
+              <AddWashiButton
+                notebookId={notebook.id}
+                pageId={activePage.id}
+                washi={washi}
+                onStartDrawing={(styleId) => setWashiDrawStyle(styleId)}
+              />
+            </>
           )}
 
           <DropdownMenu>
@@ -215,6 +226,13 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
                   notebookId={notebook.id}
                   pageId={activePage.id}
                   images={images}
+                />
+                <WashiLayer
+                  notebookId={notebook.id}
+                  pageId={activePage.id}
+                  washi={washi}
+                  drawStyleId={washiDrawStyle}
+                  onFinishDrawing={() => setWashiDrawStyle(null)}
                 />
                 <AnnotationLayer
                   notebookId={notebook.id}
