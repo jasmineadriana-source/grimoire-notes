@@ -28,14 +28,16 @@ export function Library() {
   const [creating, setCreating] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
   const [name, setName] = useState("");
+  const [characterName, setCharacterName] = useState("");
   const [theme, setTheme] = useState<ThemeKey>("parchment");
 
   const onCreate = () => {
     const trimmed = name.trim() || "Untitled Grimoire";
-    const id = createNotebook(trimmed, theme);
+    const id = createNotebook(trimmed, theme, characterName.trim() || undefined);
     setActiveNotebook(id);
     setCreating(false);
     setName("");
+    setCharacterName("");
     toast.success(`"${trimmed}" forged.`);
   };
 
@@ -102,6 +104,17 @@ export function Library() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="The Chronicles of..."
                     autoFocus
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="char-name">
+                    Character name <span className="text-muted-foreground italic font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="char-name"
+                    value={characterName}
+                    onChange={(e) => setCharacterName(e.target.value)}
+                    placeholder="Thalia Moonwhisper"
                   />
                 </div>
                 <div>
