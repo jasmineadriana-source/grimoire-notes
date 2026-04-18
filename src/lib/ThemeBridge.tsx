@@ -36,8 +36,8 @@ const buildCss = (t: CustomTheme): string => {
   const accentFg = dark ? tintL(background, -2) : tintL(background, 8);
   const primaryFg = dark ? tintL(background, -2) : tintL(background, 10);
 
-  const appBg = t.appBgImage ? `url("${t.appBgImage}")` : "none";
-  const pageBg = t.pageBgImage ? `url("${t.pageBgImage}")` : "none";
+  const appBg = t.appBgImage ? `url("${t.appBgImage}")` : null;
+  const pageBg = t.pageBgImage ? `url("${t.pageBgImage}")` : null;
 
   return `
 [data-theme="${t.id}"] {
