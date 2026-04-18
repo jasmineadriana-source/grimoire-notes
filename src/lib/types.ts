@@ -6,7 +6,10 @@ export type ThemeKey =
   | "ivory"
   | "sand"
   | "slate"
-  | "midnight";
+  | "midnight"
+  | "pink"
+  | "purple"
+  | "blue";
 
 export const THEMES: { key: ThemeKey; name: string; tagline: string }[] = [
   { key: "parchment", name: "Classic Parchment", tagline: "Aged paper & burgundy ink" },
@@ -17,6 +20,9 @@ export const THEMES: { key: ThemeKey; name: string; tagline: string }[] = [
   { key: "sand", name: "Sand (Solid)", tagline: "Warm beige, no texture" },
   { key: "slate", name: "Slate (Solid)", tagline: "Cool gray, no texture" },
   { key: "midnight", name: "Midnight (Solid)", tagline: "Deep dark, no texture" },
+  { key: "pink", name: "Pink (Solid)", tagline: "Soft rose blush" },
+  { key: "purple", name: "Purple (Solid)", tagline: "Lavender twilight" },
+  { key: "blue", name: "Blue (Solid)", tagline: "Calm sky blue" },
 ];
 
 export type CharacterSheet = {
