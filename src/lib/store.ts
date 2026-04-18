@@ -25,7 +25,7 @@ type AppState = {
   setActiveNotebook: (id: string | null) => void;
   setActivePage: (id: string | null) => void;
 
-  createNotebook: (name: string, theme: ThemeKey) => string;
+  createNotebook: (name: string, theme: ThemeKey, characterName?: string) => string;
   renameNotebook: (id: string, name: string) => void;
   setNotebookTheme: (id: string, theme: ThemeKey) => void;
   deleteNotebook: (id: string) => void;
@@ -86,14 +86,14 @@ export const useApp = create<AppState>()(
       },
       setActivePage: (id) => set({ activePageId: id }),
 
-      createNotebook: (name, theme) => {
+      createNotebook: (name, theme, characterName) => {
         const nb: Notebook = {
           id: uid(),
           name,
           theme,
           createdAt: Date.now(),
           pages: [
-            { id: uid(), kind: "character", title: "Adventurer", sheet: blankSheet(name) },
+            { id: uid(), kind: "character", title: "Adventurer", sheet: blankSheet(characterName?.trim() || name) },
           ],
         };
         set({ notebooks: [...get().notebooks, nb] });
