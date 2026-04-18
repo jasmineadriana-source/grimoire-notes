@@ -597,7 +597,10 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'IM Fell English', Georgia, serif;
-    background-image: var(--texture);
+    /* Custom themes can set --app-bg-image; built-ins fall back to texture. */
+    background-image: var(--app-bg-image, var(--texture));
+    background-size: cover;
+    background-position: center;
     background-attachment: fixed;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
