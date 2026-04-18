@@ -228,6 +228,8 @@ export function CharacterSheetEditor({
         <Field label="HP Temp" value={sheet.hpTemp} onChange={(v) => set({ hpTemp: v })} />
       </div>
 
+      <RestTracker sheet={sheet} onChange={set} />
+
       <div className="ornament-divider my-4" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
