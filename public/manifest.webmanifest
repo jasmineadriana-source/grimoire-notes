@@ -1,0 +1,25 @@
+{
+  "name": "Grimoire — D&D Character Notebook",
+  "short_name": "Grimoire",
+  "description": "A beautiful iPad-first notebook for Dungeons & Dragons players. Character sheets, blank pages, dice rolls, and themes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1a0f0a",
+  "theme_color": "#1a0f0a",
+  "icons": [
+    {
+      "src": "/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
