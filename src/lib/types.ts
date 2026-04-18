@@ -74,6 +74,9 @@ export type CharacterSheet = {
   equipment: string;
   spells: string;
   notes: string;
+  // Rest tracker — Unix ms timestamps of the last short / long rest taken.
+  lastShortRest?: number;
+  lastLongRest?: number;
 };
 
 export const blankSheet = (name = "New Adventurer"): CharacterSheet => ({
