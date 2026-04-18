@@ -28,6 +28,35 @@ const TOOL_DEFAULTS: Record<Tool, { size: number; color: string; opacity: number
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+/** Hoisted outside the main component so React doesn't unmount/remount these
+ * buttons (and their lucide SVGs) on every parent render — that was causing
+ * the tool icons to flicker/disappear when switching tools. */
+const ToolBtn = ({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof Pen;
+  label: string;
+}) => (
+  <button
+    onClick={onClick}
+    title={label}
+    aria-label={label}
+    className={cn(
+      "h-9 w-9 rounded-md flex items-center justify-center border transition-all shrink-0",
+      active
+        ? "border-accent bg-gradient-accent text-primary-foreground accent-glow"
+        : "border-border bg-card hover:border-accent/60",
+    )}
+  >
+    <Icon className="h-4 w-4" />
+  </button>
+);
+
 type Props = {
   notebookId: string;
   pageId: string;
