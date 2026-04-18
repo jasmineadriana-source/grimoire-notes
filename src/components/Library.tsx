@@ -132,9 +132,7 @@ export function Library() {
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setCreating(false)}>Cancel</Button>
-                <Button onClick={onCreate} className="bg-gradient-accent text-primary-foreground font-display">
-                  Forge
-                </Button>
+                <Button variant="ghost" onClick={onCreate}>Forge</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
