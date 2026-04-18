@@ -156,6 +156,15 @@ export const useApp = create<AppState>()(
       clearHistory: () => set({ rollHistory: [] }),
       addPreset: (p) => set({ presets: [{ id: uid(), ...p }, ...get().presets] }),
       removePreset: (id) => set({ presets: get().presets.filter((x) => x.id !== id) }),
+
+      customWashi: [],
+      addCustomWashi: (c) => {
+        const id = uid();
+        set({ customWashi: [{ id, ...c }, ...get().customWashi] });
+        return id;
+      },
+      removeCustomWashi: (id) =>
+        set({ customWashi: get().customWashi.filter((x) => x.id !== id) }),
     }),
     {
       name: "grimoire-v1",
@@ -164,6 +173,7 @@ export const useApp = create<AppState>()(
         notebooks: s.notebooks,
         presets: s.presets,
         rollHistory: s.rollHistory,
+        customWashi: s.customWashi,
       }),
     },
   ),
