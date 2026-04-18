@@ -623,18 +623,14 @@
 
 @layer components {
   .page-surface {
-    /* Layer optional uploaded image on top of the gradient/solid surface. */
-    background-image: var(--page-bg-image, none);
-    background-color: hsl(var(--paper));
+    /* Custom themes can set --page-bg-image to a url(); built-ins fall back
+       to the themed gradient. */
+    background: var(--page-bg-image, var(--gradient-page));
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     box-shadow: var(--shadow-page);
     border: 1px solid hsl(var(--paper-edge) / 0.4);
-  }
-  /* Built-in themes get the gradient when no image is set */
-  .page-surface:where([style*="--page-bg-image: none"], :not([style*="--page-bg-image"])) {
-    background-image: var(--gradient-page);
   }
 
   .cover-surface {
