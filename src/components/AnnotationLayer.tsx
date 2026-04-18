@@ -28,6 +28,35 @@ const TOOL_DEFAULTS: Record<Tool, { size: number; color: string; opacity: number
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+/** Hoisted outside the main component so React doesn't unmount/remount these
+ * buttons (and their lucide SVGs) on every parent render — that was causing
+ * the tool icons to flicker/disappear when switching tools. */
+const ToolBtn = ({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof Pen;
+  label: string;
+}) => (
+  <button
+    onClick={onClick}
+    title={label}
+    aria-label={label}
+    className={cn(
+      "h-9 w-9 rounded-md flex items-center justify-center border transition-all shrink-0",
+      active
+        ? "border-accent bg-gradient-accent text-primary-foreground accent-glow"
+        : "border-border bg-card hover:border-accent/60",
+    )}
+  >
+    <Icon className="h-4 w-4" />
+  </button>
+);
+
 type Props = {
   notebookId: string;
   pageId: string;
@@ -237,21 +266,6 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
     updatePage(notebookIdRef.current, pageIdRef.current, { strokes: [] });
   };
 
-  const ToolBtn = ({ t, icon: Icon, label }: { t: Tool; icon: typeof Pen; label: string }) => (
-    <button
-      onClick={() => setTool(t)}
-      title={label}
-      className={cn(
-        "h-9 w-9 rounded-md flex items-center justify-center border transition-all",
-        tool === t
-          ? "border-accent bg-gradient-accent text-primary-foreground accent-glow"
-          : "border-border bg-card hover:border-accent/60",
-      )}
-    >
-      <Icon className="h-4 w-4" />
-    </button>
-  );
-
   const activeColor = colors[tool];
   const activeSize = sizes[tool];
 
@@ -290,10 +304,10 @@ export function AnnotationLayer({ notebookId, pageId, strokes }: Props) {
 
         <span className="w-px h-6 bg-border" />
 
-        <ToolBtn t="pen" icon={Pen} label="Pen" />
-        <ToolBtn t="pencil" icon={Pencil} label="Pencil" />
-        <ToolBtn t="highlighter" icon={Highlighter} label="Highlighter" />
-        <ToolBtn t="eraser" icon={Eraser} label="Eraser" />
+        <ToolBtn active={tool === "pen"} onClick={() => setTool("pen")} icon={Pen} label="Pen" />
+        <ToolBtn active={tool === "pencil"} onClick={() => setTool("pencil")} icon={Pencil} label="Pencil" />
+        <ToolBtn active={tool === "highlighter"} onClick={() => setTool("highlighter")} icon={Highlighter} label="Highlighter" />
+        <ToolBtn active={tool === "eraser"} onClick={() => setTool("eraser")} icon={Eraser} label="Eraser" />
 
         {tool !== "eraser" && (
           <>
