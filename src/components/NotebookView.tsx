@@ -32,6 +32,7 @@ import { CharacterSheetEditor } from "./CharacterSheetEditor";
 import { PaperPage } from "./PaperPage";
 import { AnnotationLayer } from "./AnnotationLayer";
 import { AddImagesButton, ImagesLayer } from "./ImagesLayer";
+import { AddWashiButton, WashiLayer } from "./WashiLayer";
 import { toast } from "sonner";
 
 const pageIcon = (k: PageKind) => {
