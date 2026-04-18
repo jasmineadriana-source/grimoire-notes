@@ -117,7 +117,7 @@ export function Library() {
                       >
                         <span
                           className="h-8 w-8 rounded-md shrink-0"
-                          style={{ background: swatchFor[t.key] }}
+                          style={{ background: swatchForTheme(t.key, customThemes) }}
                         />
                         <span className="min-w-0">
                           <span className="block font-display text-sm truncate">{t.name}</span>
