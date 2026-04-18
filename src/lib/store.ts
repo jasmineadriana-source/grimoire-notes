@@ -39,6 +39,10 @@ type AppState = {
   clearHistory: () => void;
   addPreset: (p: Omit<RollPreset, "id">) => void;
   removePreset: (id: string) => void;
+
+  customWashi: CustomWashi[];
+  addCustomWashi: (c: Omit<CustomWashi, "id">) => string;
+  removeCustomWashi: (id: string) => void;
 };
 
 const seedNotebook = (): Notebook => ({
