@@ -99,14 +99,48 @@ export const blankSheet = (name = "New Adventurer"): CharacterSheet => ({
   notes: "",
 });
 
-export type PageKind = "character" | "blank" | "lined" | "graph";
+export type PageKind = "character" | "blank" | "lined" | "graph" | "weapons" | "spells";
 
 export const PAPER_KINDS: { kind: PageKind; label: string }[] = [
   { kind: "character", label: "Character Sheet" },
+  { kind: "weapons", label: "Weapons" },
+  { kind: "spells", label: "Spellbook" },
   { kind: "blank", label: "Blank Page" },
   { kind: "lined", label: "College-Ruled Paper" },
   { kind: "graph", label: "Graph Paper" },
 ];
+
+/** A single weapon row on a Weapons page. */
+export type WeaponEntry = {
+  id: string;
+  name: string;
+  attack: string;       // e.g. "+5"
+  damage: string;       // e.g. "1d8+3 slashing"
+  notes: string;
+};
+
+/** A single spell row on a Spells page. */
+export type SpellEntry = {
+  id: string;
+  name: string;
+  level: number;        // 0 = cantrip, 1-9 = spell levels
+  prepared: boolean;
+  castingTime: string;
+  range: string;
+  components: string;   // V, S, M (...)
+  duration: string;
+  description: string;
+};
+
+/** Per-level slot tracking. Index 0 unused (cantrips have no slots). */
+export type SpellSlot = { used: number; total: number };
+
+export type SpellbookMeta = {
+  saveDc: string;
+  attackBonus: string;
+  ability: string;       // e.g. "WIS"
+  slots: SpellSlot[];    // length 10 — index 0 ignored
+};
 
 export type Tool = "pen" | "pencil" | "highlighter" | "eraser";
 
@@ -161,11 +195,23 @@ export type NotebookPage = {
   sheet?: CharacterSheet;
   // blank/lined/graph
   text?: string;
+  // weapons
+  weapons?: WeaponEntry[];
+  // spells
+  spells?: SpellEntry[];
+  spellbook?: SpellbookMeta;
   // shared annotations
   strokes?: Stroke[];
   images?: PageImage[];
   washi?: WashiStrip[];
 };
+
+export const blankSpellbookMeta = (): SpellbookMeta => ({
+  saveDc: "",
+  attackBonus: "",
+  ability: "",
+  slots: Array.from({ length: 10 }, () => ({ used: 0, total: 0 })),
+});
 
 export type Notebook = {
   id: string;
