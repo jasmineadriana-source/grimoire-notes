@@ -171,6 +171,24 @@ export const useApp = create<AppState>()(
       },
       removeCustomWashi: (id) =>
         set({ customWashi: get().customWashi.filter((x) => x.id !== id) }),
+
+      customThemes: [],
+      addCustomTheme: (t) => {
+        const id = `custom-${uid()}`;
+        set({ customThemes: [{ id, ...t }, ...get().customThemes] });
+        return id;
+      },
+      updateCustomTheme: (id, patch) =>
+        set({
+          customThemes: get().customThemes.map((t) =>
+            t.id === id ? { ...t, ...patch, colors: { ...t.colors, ...(patch.colors ?? {}) } } : t,
+          ),
+        }),
+      deleteCustomTheme: (id) => {
+        const remaining = get().customThemes.filter((t) => t.id !== id);
+        const fallback = get().theme === id ? "parchment" : get().theme;
+        set({ customThemes: remaining, theme: fallback });
+      },
     }),
     {
       name: "grimoire-v1",
@@ -180,6 +198,7 @@ export const useApp = create<AppState>()(
         presets: s.presets,
         rollHistory: s.rollHistory,
         customWashi: s.customWashi,
+        customThemes: s.customThemes,
       }),
     },
   ),
