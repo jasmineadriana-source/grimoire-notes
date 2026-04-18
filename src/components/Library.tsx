@@ -149,7 +149,7 @@ export function Library() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
                 <span className="text-[10px] uppercase tracking-widest font-display text-white/80 bg-black/30 backdrop-blur-sm rounded px-2 py-0.5">
-                  {THEMES.find((t) => t.key === nb.theme)?.name}
+                  {THEMES.find((t) => t.key === nb.theme)?.name ?? customThemes.find((t) => t.id === nb.theme)?.name ?? "Custom"}
                 </span>
                 <button
                   onClick={(e) => {
