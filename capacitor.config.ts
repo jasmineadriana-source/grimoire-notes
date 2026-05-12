@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.7769a3a5a9b344eeb779fe5cb85d9fcd',
+  appId: 'app.lovable.grimoirenotes',
   appName: 'grimoire-notes',
   webDir: 'dist',
   server: {
