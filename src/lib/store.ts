@@ -50,6 +50,9 @@ type AppState = {
   addCustomTheme: (t: Omit<CustomTheme, "id">) => string;
   updateCustomTheme: (id: string, patch: Partial<Omit<CustomTheme, "id">>) => void;
   deleteCustomTheme: (id: string) => void;
+
+  /** Replace all notebooks (used by cloud sync on sign-in / sign-out). */
+  setNotebooks: (notebooks: Notebook[]) => void;
 };
 
 export const useApp = create<AppState>()(
@@ -183,6 +186,8 @@ export const useApp = create<AppState>()(
         const fallback = get().theme === id ? "parchment" : get().theme;
         set({ customThemes: remaining, theme: fallback });
       },
+
+      setNotebooks: (notebooks) => set({ notebooks }),
     }),
     {
       name: "grimoire-v1",
