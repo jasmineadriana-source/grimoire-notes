@@ -255,6 +255,7 @@ export function Library() {
           ))}
         </div>
       </main>
+      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
     </div>
   );
 }
