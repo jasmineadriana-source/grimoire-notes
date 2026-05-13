@@ -23,6 +23,87 @@ export const BUILTIN_THEME_KEYS: BuiltInThemeKey[] = [
 export const isBuiltInTheme = (k: string): k is BuiltInThemeKey =>
   (BUILTIN_THEME_KEYS as string[]).includes(k);
 
+/* ============================================================
+   Dice styles — visual skin for the dice roller.
+   "white" is free; the rest are Premium-only.
+============================================================ */
+
+export type DieStyleKey =
+  | "white"
+  | "obsidian"
+  | "ruby"
+  | "emerald"
+  | "sapphire"
+  | "gold"
+  | "arcane";
+
+export type DieStyle = {
+  key: DieStyleKey;
+  name: string;
+  tagline: string;
+  premium: boolean;
+  /** CSS background for the die face. */
+  background: string;
+  /** Text/glyph color. */
+  fg: string;
+  /** Optional glow color. */
+  glow?: string;
+};
+
+export const DIE_STYLES: DieStyle[] = [
+  {
+    key: "white", name: "Bone White", tagline: "The classic adventurer's set",
+    premium: false,
+    background: "linear-gradient(135deg, hsl(40 30% 96%), hsl(35 30% 88%))",
+    fg: "hsl(25 40% 18%)",
+  },
+  {
+    key: "obsidian", name: "Obsidian", tagline: "Volcanic glass with silver edges",
+    premium: true,
+    background: "linear-gradient(135deg, hsl(225 25% 10%), hsl(220 18% 22%))",
+    fg: "hsl(40 30% 96%)",
+    glow: "hsl(220 30% 50% / 0.5)",
+  },
+  {
+    key: "ruby", name: "Ruby", tagline: "Blood-red, cut for war",
+    premium: true,
+    background: "linear-gradient(135deg, hsl(350 70% 25%), hsl(0 80% 50%))",
+    fg: "hsl(38 60% 95%)",
+    glow: "hsl(350 80% 55% / 0.6)",
+  },
+  {
+    key: "emerald", name: "Emerald", tagline: "Wild green of the deep wood",
+    premium: true,
+    background: "linear-gradient(135deg, hsl(150 60% 18%), hsl(140 65% 42%))",
+    fg: "hsl(60 50% 96%)",
+    glow: "hsl(140 80% 50% / 0.55)",
+  },
+  {
+    key: "sapphire", name: "Sapphire", tagline: "Cold star-blue",
+    premium: true,
+    background: "linear-gradient(135deg, hsl(220 65% 22%), hsl(210 85% 55%))",
+    fg: "hsl(200 60% 96%)",
+    glow: "hsl(210 90% 60% / 0.6)",
+  },
+  {
+    key: "gold", name: "Royal Gold", tagline: "For the dragon's hoard",
+    premium: true,
+    background: "linear-gradient(135deg, hsl(35 70% 38%), hsl(45 95% 60%))",
+    fg: "hsl(25 50% 12%)",
+    glow: "hsl(45 95% 60% / 0.65)",
+  },
+  {
+    key: "arcane", name: "Arcane", tagline: "Glyph-etched, faintly humming",
+    premium: true,
+    background: "linear-gradient(135deg, hsl(265 55% 25%), hsl(280 90% 65%))",
+    fg: "hsl(60 80% 96%)",
+    glow: "hsl(280 90% 70% / 0.7)",
+  },
+];
+
+export const isPremiumDieStyle = (k: DieStyleKey): boolean =>
+  DIE_STYLES.find((s) => s.key === k)?.premium ?? false;
+
 export const THEMES: { key: BuiltInThemeKey; name: string; tagline: string }[] = [
   { key: "parchment", name: "Classic Parchment", tagline: "Aged paper & burgundy ink" },
   { key: "arcane", name: "Dark Arcane", tagline: "Obsidian & glowing runes" },
