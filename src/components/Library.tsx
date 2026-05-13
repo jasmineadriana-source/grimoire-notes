@@ -15,10 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeSwitcher, swatchForTheme } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
-import { Book, Dices, LogOut, Plus, Trash2 } from "lucide-react";
+import { Book, Crown, Dices, Lock, LogOut, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradeModal } from "./UpgradeModal";
+import { PaymentTestModeBanner } from "./PaymentTestModeBanner";
 
 export function Library() {
   const customThemes = useApp((s) => s.customThemes);
@@ -27,14 +30,23 @@ export function Library() {
   const createNotebook = useApp((s) => s.createNotebook);
   const deleteNotebook = useApp((s) => s.deleteNotebook);
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
 
   const [creating, setCreating] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [name, setName] = useState("");
   const [characterName, setCharacterName] = useState("");
   const [theme, setTheme] = useState<ThemeKey>("parchment");
 
+  const notebookLimitReached = !isPremium && notebooks.length >= 1;
+
   const onCreate = () => {
+    if (notebookLimitReached) {
+      setCreating(false);
+      setUpgradeOpen(true);
+      return;
+    }
     const trimmed = name.trim() || "Untitled Grimoire";
     const id = createNotebook(trimmed, theme, characterName.trim() || undefined);
     setActiveNotebook(id);
@@ -46,6 +58,7 @@ export function Library() {
 
   return (
     <div className="min-h-screen">
+      <PaymentTestModeBanner />
       <header
         className="flex items-center gap-2 px-4 sm:px-8 py-4 border-b border-border bg-card/60 backdrop-blur-sm"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
@@ -60,6 +73,17 @@ export function Library() {
           </div>
         </div>
         <ThemeSwitcher />
+        {!isPremium && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 font-display border-accent/60 text-accent hover:bg-accent/10"
+            onClick={() => setUpgradeOpen(true)}
+          >
+            <Crown className="h-4 w-4" />
+            <span className="hidden sm:inline">Upgrade</span>
+          </Button>
+        )}
         <Dialog open={diceOpen} onOpenChange={setDiceOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-1 bg-gradient-accent text-primary-foreground hover:opacity-90 font-display">
@@ -97,14 +121,40 @@ export function Library() {
 
       <main className="px-4 sm:px-8 pb-16 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <Dialog open={creating} onOpenChange={setCreating}>
+          <Dialog
+            open={creating}
+            onOpenChange={(o) => {
+              if (o && notebookLimitReached) {
+                setUpgradeOpen(true);
+                return;
+              }
+              setCreating(o);
+            }}
+          >
             <DialogTrigger asChild>
-              <button className="group relative h-64 rounded-xl border-2 border-dashed border-border hover:border-accent transition-colors flex flex-col items-center justify-center gap-3 bg-card/30 hover:bg-card/60">
+              <button
+                className={`group relative h-64 rounded-xl border-2 border-dashed transition-colors flex flex-col items-center justify-center gap-3 bg-card/30 hover:bg-card/60 ${
+                  notebookLimitReached
+                    ? "border-accent/40 hover:border-accent"
+                    : "border-border hover:border-accent"
+                }`}
+              >
                 <div className="h-14 w-14 rounded-full bg-gradient-accent flex items-center justify-center accent-glow group-hover:scale-110 transition-transform">
-                  <Plus className="h-7 w-7 text-primary-foreground" />
+                  {notebookLimitReached ? (
+                    <Lock className="h-7 w-7 text-primary-foreground" />
+                  ) : (
+                    <Plus className="h-7 w-7 text-primary-foreground" />
+                  )}
                 </div>
-                <span className="font-display text-lg">Forge a new notebook</span>
-                <span className="text-xs text-muted-foreground italic">Begin a new tale</span>
+                <span className="font-display text-lg flex items-center gap-2">
+                  {notebookLimitReached ? "Unlock more notebooks" : "Forge a new notebook"}
+                  {notebookLimitReached && <Crown className="h-4 w-4 text-accent" />}
+                </span>
+                <span className="text-xs text-muted-foreground italic px-4 text-center">
+                  {notebookLimitReached
+                    ? "Free includes 1 notebook. Premium unlocks unlimited."
+                    : "Begin a new tale"}
+                </span>
               </button>
             </DialogTrigger>
             <DialogContent>
@@ -205,6 +255,7 @@ export function Library() {
           ))}
         </div>
       </main>
+      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
     </div>
   );
 }

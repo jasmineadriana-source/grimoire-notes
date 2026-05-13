@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { THEMES, ThemeKey, isBuiltInTheme, BuiltInThemeKey } from "@/lib/types";
 import { useApp } from "@/lib/store";
-import { Check, Palette, Pencil, Plus } from "lucide-react";
+import { Check, Crown, Palette, Pencil, Plus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { CustomThemeDialog } from "./CustomThemeDialog";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradeModal } from "./UpgradeModal";
 
 const builtInSwatch: Record<BuiltInThemeKey, string> = {
   parchment: "linear-gradient(135deg, hsl(38 55% 80%), hsl(42 75% 50%), hsl(350 55% 32%))",
@@ -46,9 +48,11 @@ export function ThemeSwitcher({ notebookId }: Props) {
   const setTheme = useApp((s) => s.setTheme);
   const setNotebookTheme = useApp((s) => s.setNotebookTheme);
   const customThemes = useApp((s) => s.customThemes);
+  const { isPremium } = useSubscription();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const choose = (t: ThemeKey) => {
     if (notebookId) setNotebookTheme(notebookId, t);
@@ -56,10 +60,12 @@ export function ThemeSwitcher({ notebookId }: Props) {
   };
 
   const openCreate = () => {
+    if (!isPremium) { setUpgradeOpen(true); return; }
     setEditingId(null);
     setDialogOpen(true);
   };
   const openEdit = (id: string) => {
+    if (!isPremium) { setUpgradeOpen(true); return; }
     setEditingId(id);
     setDialogOpen(true);
   };
@@ -114,7 +120,9 @@ export function ThemeSwitcher({ notebookId }: Props) {
 
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="font-display text-xs text-muted-foreground flex items-center justify-between">
-            <span>Custom</span>
+            <span className="flex items-center gap-1">
+              Custom {!isPremium && <Crown className="h-3 w-3 text-accent" />}
+            </span>
           </DropdownMenuLabel>
           {customThemes.length === 0 && (
             <div className="px-2 py-1.5 text-[11px] text-muted-foreground italic">
@@ -156,6 +164,7 @@ export function ThemeSwitcher({ notebookId }: Props) {
             className="gap-2 py-2 cursor-pointer text-accent font-display"
           >
             <Plus className="h-4 w-4" /> Create custom theme…
+            {!isPremium && <Crown className="h-3 w-3 ml-auto" />}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -164,6 +173,11 @@ export function ThemeSwitcher({ notebookId }: Props) {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editingId={editingId}
+      />
+      <UpgradeModal
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        reason="Design your own themes — pick custom colors, dark/light mode, and even background images."
       />
     </>
   );

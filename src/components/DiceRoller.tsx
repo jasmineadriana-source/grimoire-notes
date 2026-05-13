@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DICE, DIE_SIDES, DieKind, RollResult } from "@/lib/types";
+import { DICE, DIE_SIDES, DIE_STYLES, DieKind, DieStyleKey, RollResult, isPremiumDieStyle } from "@/lib/types";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dice1, History, Plus, Star, Trash2, X } from "lucide-react";
+import { Crown, Dice1, History, Lock, Plus, Star, Trash2, X } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradeModal } from "./UpgradeModal";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -35,16 +37,23 @@ function performRoll(die: DieKind, count: number, modifier: number, label: strin
   };
 }
 
-function DieFace({ die, rolling, value }: { die: DieKind; rolling: boolean; value?: number }) {
+function DieFace({
+  die, rolling, value, styleKey,
+}: { die: DieKind; rolling: boolean; value?: number; styleKey: DieStyleKey }) {
+  const style = DIE_STYLES.find((s) => s.key === styleKey) ?? DIE_STYLES[0];
   return (
     <div className="relative h-28 w-28 flex items-center justify-center">
       <div
-        className={`absolute inset-0 rounded-2xl bg-gradient-accent accent-glow transition-all ${
+        className={`absolute inset-0 rounded-2xl transition-all ${
           rolling ? "animate-dice-roll" : ""
         }`}
-        style={{ transformStyle: "preserve-3d" }}
+        style={{
+          transformStyle: "preserve-3d",
+          background: style.background,
+          boxShadow: style.glow ? `0 0 40px ${style.glow}` : "0 8px 20px hsl(0 0% 0% / 0.25)",
+        }}
       />
-      <div className="relative flex flex-col items-center justify-center text-primary-foreground">
+      <div className="relative flex flex-col items-center justify-center" style={{ color: style.fg }}>
         <span className="text-5xl leading-none drop-shadow">{dieGlyph[die]}</span>
         <span className="font-display text-xs mt-1 tracking-widest">{die.toUpperCase()}</span>
       </div>
@@ -68,6 +77,14 @@ export function DiceRoller({ onClose }: { onClose?: () => void }) {
   const history = useApp((s) => s.rollHistory);
   const clearHistory = useApp((s) => s.clearHistory);
   const pushRoll = useApp((s) => s.pushRoll);
+  const dieStyle = useApp((s) => s.dieStyle);
+  const setDieStyle = useApp((s) => s.setDieStyle);
+  const { isPremium } = useSubscription();
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+
+  // If a free user somehow has a premium style selected, fall back to white for display.
+  const effectiveStyle: DieStyleKey =
+    isPremium || !isPremiumDieStyle(dieStyle) ? dieStyle : "white";
 
   const [die, setDie] = useState<DieKind>("d20");
   const [count, setCount] = useState(1);
@@ -139,7 +156,43 @@ export function DiceRoller({ onClose }: { onClose?: () => void }) {
           </div>
 
           <div className="flex justify-center py-4">
-            <DieFace die={die} rolling={rolling} value={last?.total} />
+            <DieFace die={die} rolling={rolling} value={last?.total} styleKey={effectiveStyle} />
+          </div>
+
+          <div>
+            <Label className="text-xs flex items-center gap-1">
+              Dice style {!isPremium && <Crown className="h-3 w-3 text-accent" />}
+            </Label>
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 mt-1">
+              {DIE_STYLES.map((s) => {
+                const locked = s.premium && !isPremium;
+                const selected = effectiveStyle === s.key;
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => {
+                      if (locked) { setUpgradeOpen(true); return; }
+                      setDieStyle(s.key);
+                    }}
+                    title={`${s.name}${locked ? " — Premium" : ""}`}
+                    className={`relative h-12 rounded-lg border-2 transition-all ${
+                      selected ? "border-accent accent-glow scale-105" : "border-border hover:border-accent/60"
+                    }`}
+                    style={{ background: s.background }}
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 rounded-md bg-black/40 flex items-center justify-center">
+                        <Lock className="h-4 w-4 text-white drop-shadow" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground italic mt-1">
+              {DIE_STYLES.find((s) => s.key === effectiveStyle)?.name} —{" "}
+              {DIE_STYLES.find((s) => s.key === effectiveStyle)?.tagline}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -277,6 +330,11 @@ export function DiceRoller({ onClose }: { onClose?: () => void }) {
           ))}
         </TabsContent>
       </Tabs>
+      <UpgradeModal
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        reason="Roll with premium dice — obsidian, ruby, emerald, sapphire, gold and arcane."
+      />
     </Card>
   );
 }
