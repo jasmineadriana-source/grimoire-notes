@@ -79,7 +79,10 @@ export function NotebookView({ onBack }: { onBack: () => void }) {
   return (
     <div className="min-h-screen flex w-full">
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-border flex items-center gap-2 px-3 sm:px-4 bg-card/60 backdrop-blur-sm">
+        <header
+          className="border-b border-border flex items-center gap-2 px-3 sm:px-4 bg-card/60 backdrop-blur-sm min-h-14"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 font-display">
             <ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline">Library</span>
           </Button>
