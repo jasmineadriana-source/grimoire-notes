@@ -15,8 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeSwitcher, swatchForTheme } from "./ThemeSwitcher";
 import { DiceRoller } from "./DiceRoller";
-import { Book, Dices, Plus, Trash2 } from "lucide-react";
+import { Book, Dices, LogOut, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Library() {
   const customThemes = useApp((s) => s.customThemes);
@@ -24,6 +26,7 @@ export function Library() {
   const setActiveNotebook = useApp((s) => s.setActiveNotebook);
   const createNotebook = useApp((s) => s.createNotebook);
   const deleteNotebook = useApp((s) => s.deleteNotebook);
+  const { user } = useAuth();
 
   const [creating, setCreating] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
@@ -67,6 +70,19 @@ export function Library() {
             <DiceRoller onClose={() => setDiceOpen(false)} />
           </DialogContent>
         </Dialog>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1 font-display"
+          onClick={async () => {
+            await supabase.auth.signOut();
+            toast.success("Signed out");
+          }}
+          title={user?.email ? `Sign out (${user.email})` : "Sign out"}
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden sm:inline">Sign out</span>
+        </Button>
       </header>
 
       <section className="px-4 sm:px-8 pt-10 sm:pt-16 pb-8 text-center max-w-3xl mx-auto">
