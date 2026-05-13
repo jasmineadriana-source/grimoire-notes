@@ -5,6 +5,7 @@ import {
   blankSpellbookMeta,
   CustomTheme,
   CustomWashi,
+  DieStyleKey,
   Notebook,
   NotebookPage,
   PageKind,
@@ -50,6 +51,10 @@ type AppState = {
   addCustomTheme: (t: Omit<CustomTheme, "id">) => string;
   updateCustomTheme: (id: string, patch: Partial<Omit<CustomTheme, "id">>) => void;
   deleteCustomTheme: (id: string) => void;
+
+  /** Currently selected dice skin. Free users may only use "white". */
+  dieStyle: DieStyleKey;
+  setDieStyle: (s: DieStyleKey) => void;
 
   /** Replace all notebooks (used by cloud sync on sign-in / sign-out). */
   setNotebooks: (notebooks: Notebook[]) => void;
