@@ -52,28 +52,13 @@ type AppState = {
   deleteCustomTheme: (id: string) => void;
 };
 
-const seedNotebook = (): Notebook => ({
-  id: uid(),
-  name: "My First Grimoire",
-  theme: "parchment",
-  createdAt: Date.now(),
-  pages: [
-    {
-      id: uid(),
-      kind: "character",
-      title: "Adventurer",
-      sheet: blankSheet("Thalia Moonwhisper"),
-    },
-  ],
-});
-
 export const useApp = create<AppState>()(
   persist(
     (set, get) => ({
       theme: "parchment",
       setTheme: (theme) => set({ theme }),
 
-      notebooks: [seedNotebook()],
+      notebooks: [],
       activeNotebookId: null,
       activePageId: null,
 
