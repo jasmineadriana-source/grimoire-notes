@@ -66,6 +66,9 @@ export const useApp = create<AppState>()(
       theme: "parchment",
       setTheme: (theme) => set({ theme }),
 
+      dieStyle: "white",
+      setDieStyle: (dieStyle) => set({ dieStyle }),
+
       notebooks: [],
       activeNotebookId: null,
       activePageId: null,
