@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useApp } from "@/lib/store";
 import { Notebook } from "@/lib/types";
+import type { Json } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 
 /**
@@ -63,7 +64,7 @@ export function CloudSync() {
             client_id: n.id,
             name: n.name,
             theme: n.theme,
-            data: n as unknown as Record<string, unknown>,
+            data: n as unknown as Json,
           }));
           const { error: upErr } = await supabase
             .from("notebooks")
@@ -117,7 +118,7 @@ export function CloudSync() {
             client_id: n.id,
             name: n.name,
             theme: n.theme,
-            data: n as unknown as Record<string, unknown>,
+            data: n as unknown as Json,
           }));
           const { error } = await supabase
             .from("notebooks")
